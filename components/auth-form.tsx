@@ -1,15 +1,25 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "@/components/session-provider";
 
 type Tab = "in" | "up";
 
+/**
+ * Lee `?modo=registro` para abrir en la pestaña CREAR CUENTA (SPEC 02).
+ * Usa `useSearchParams`, así que debe ir dentro de `<Suspense>`.
+ * La `key` reinicia el formulario si cambia el modo estando ya en /acceso.
+ */
 export function AuthForm() {
+  const initialTab: Tab = useSearchParams().get("modo") === "registro" ? "up" : "in";
+  return <AuthFormView key={initialTab} initialTab={initialTab} />;
+}
+
+export function AuthFormView({ initialTab }: { initialTab: Tab }) {
   const router = useRouter();
   const { login, logout } = useSession();
-  const [tab, setTab] = useState<Tab>("in");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [email, setEmail] = useState("");
