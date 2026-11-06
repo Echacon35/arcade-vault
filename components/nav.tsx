@@ -5,11 +5,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useSession } from "@/components/session-provider";
 
-type Section = "biblioteca" | "salon" | "acceso";
+type Section = "inicio" | "biblioteca" | "salon" | "acceso";
 
 function sectionFor(pathname: string | null): Section | null {
   if (pathname === null) return null;
-  if (pathname === "/" || pathname.startsWith("/juegos/")) return "biblioteca";
+  if (pathname === "/") return "inicio";
+  if (pathname === "/juegos" || pathname.startsWith("/juegos/")) return "biblioteca";
   if (pathname === "/salon") return "salon";
   if (pathname === "/acceso") return "acceso";
   return null;
@@ -49,12 +50,16 @@ function NavBar({ active }: { active: Section | null }) {
           </div>
         </Link>
         <div className="links">
-          <Link href="/" className={cls("biblioteca")}>
+          <Link href="/" className={cls("inicio")}>
+            Inicio
+          </Link>
+          <Link href="/juegos" className={cls("biblioteca")}>
             Biblioteca
           </Link>
           <Link href="/salon" className={cls("salon")}>
             Salón de la Fama
           </Link>
+          <AboutDisabled />
         </div>
         <div className="spacer"></div>
         <div className="coin-counter">
@@ -78,12 +83,16 @@ function NavBar({ active }: { active: Section | null }) {
       <div className={"av-mobile-backdrop" + (open ? " open" : "")} onClick={close}></div>
       <aside className={"av-mobile-panel" + (open ? " open" : "")}>
         <div className="pixel neon-cyan mb-4 text-[11px]">MENÚ</div>
-        <Link href="/" className={cls("biblioteca")} onClick={close}>
+        <Link href="/" className={cls("inicio")} onClick={close}>
+          Inicio
+        </Link>
+        <Link href="/juegos" className={cls("biblioteca")} onClick={close}>
           Biblioteca
         </Link>
         <Link href="/salon" className={cls("salon")} onClick={close}>
           Salón de la Fama
         </Link>
+        <AboutDisabled />
         <Link href="/acceso" className={cls("acceso")} onClick={close}>
           {user ? "Cuenta" : "Iniciar Sesión"}
         </Link>
@@ -91,5 +100,14 @@ function NavBar({ active }: { active: Section | null }) {
         <div className="pixel text-[9px] tracking-[0.16em] text-ink-faint">CRÉDITOS · 03</div>
       </aside>
     </>
+  );
+}
+
+/** "Acerca de" visible pero sin página todavía (SPEC 02). No navega. */
+function AboutDisabled() {
+  return (
+    <span className="nav-disabled" aria-disabled="true" title="Próximamente">
+      Acerca de <span className="soon">PRÓXIMAMENTE</span>
+    </span>
   );
 }
