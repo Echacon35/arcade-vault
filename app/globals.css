@@ -50,7 +50,10 @@
   --line: rgba(0, 245, 255, 0.18);
   --line-2: rgba(255, 255, 255, 0.06);
   /* Variables de next/font definidas en app/layout.tsx */
-  --pixel: var(--font-press-start-2p), "Press Start 2P", system-ui, monospace;
+  /* --pixel no usa var(--font-press-start-2p): incluye "Press Start 2P Fallback"
+     (Arial al 224 %), y los glifos que la fuente no tiene (≡, ♥) saldrían el doble
+     de anchos que en el template. La @font-face "Press Start 2P" la sigue cargando next/font. */
+  --pixel: "Press Start 2P", system-ui, monospace;
   --mono: var(--font-jetbrains-mono), "JetBrains Mono", var(--font-courier-prime), "Courier Prime", "Courier New", monospace;
 }
 
