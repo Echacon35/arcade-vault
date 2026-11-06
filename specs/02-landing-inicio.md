@@ -1,6 +1,6 @@
 # SPEC 02 — Landing de inicio
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-11-06
 > **Objetivo:** Reemplazar `/` por la landing del template `references/Templates/home-about`, mover la Biblioteca a `/juegos` y añadir al Nav `Inicio` y un `Acerca de` deshabilitado.
