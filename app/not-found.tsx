@@ -14,7 +14,7 @@ export default function NotFound() {
       <p className="pixel mt-6 text-[clamp(10px,1.6vw,13px)] tracking-[0.2em] text-ink-dim">
         ERROR 404 · PANTALLA NO ENCONTRADA
       </p>
-      <Link href="/" className="btn lg mt-10">
+      <Link href="/juegos" className="btn lg mt-10">
         VOLVER A LA BIBLIOTECA
       </Link>
     </section>

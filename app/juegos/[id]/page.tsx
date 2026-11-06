@@ -63,7 +63,7 @@ async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">)
           <Link href={`/juegos/${game.id}/jugar`} className={"btn lg " + playColor}>
             JUGAR
           </Link>
-          <Link href="/" className="btn lg ghost">
+          <Link href="/juegos" className="btn lg ghost">
             VOLVER
           </Link>
         </div>
