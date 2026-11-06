@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { GAMES, getGame } from "@/lib/games";
 import { seededScores, seedFor } from "@/lib/scores";
 
@@ -7,7 +8,20 @@ export function generateStaticParams() {
   return GAMES.map((game) => ({ id: game.id }));
 }
 
-export default async function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
+/**
+ * Con `cacheComponents`, un id fuera de `generateStaticParams` se resuelve en
+ * petición y el streaming ya empezó (Suspense del Nav). `notFound()` debe
+ * ocurrir dentro de un `<Suspense>` para que el 404 temático se pinte en su lugar.
+ */
+export default function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
+  return (
+    <Suspense fallback={null}>
+      <GameDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">) {
   const { id } = await params;
   const game = getGame(id);
   if (!game) notFound();
