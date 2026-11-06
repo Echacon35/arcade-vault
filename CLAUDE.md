@@ -19,6 +19,9 @@ El desarrollo sigue **Spec Driven Design** con las skills `/spec` y `/spec-impl`
 
 No hay framework de tests configurado todavía.
 
+## Skills
+Usa siempre /frontend-design para diseñar interfaz de usuario.
+
 ## Stack y particularidades
 
 - **Next.js 16.4 (App Router) + React 19.3 + TypeScript strict.** Las APIs difieren de versiones anteriores: consulta `node_modules/next/dist/docs/` (`01-app/`, `03-architecture/`) antes de escribir código.
