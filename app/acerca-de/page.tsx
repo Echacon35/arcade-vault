@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ContactForm } from "@/components/about/contact-form";
 import { HighlightIcon, type HighlightIconKind } from "@/components/about/highlight-icon";
 import { RevealObserver } from "@/components/home/reveal-observer";
 import type { GameColor } from "@/lib/games";
@@ -72,24 +73,7 @@ export default function AcercaDePage() {
             </div>
           </div>
 
-          {/* Formulario temporal sin lógica (SPEC 03, paso 2). Se sustituye por <ContactForm /> en el paso 6. */}
-          <form className="contact-form">
-            <div className="field">
-              <label htmlFor="contact-name">NOMBRE</label>
-              <input id="contact-name" placeholder="px_kai" />
-            </div>
-            <div className="field">
-              <label htmlFor="contact-email">CORREO ELECTRÓNICO</label>
-              <input id="contact-email" type="email" placeholder="jugador@vault.gg" />
-            </div>
-            <div className="field">
-              <label htmlFor="contact-message">MENSAJE</label>
-              <textarea id="contact-message" rows={5} placeholder="Cuéntanos qué tienes en mente…"></textarea>
-            </div>
-            <button className="btn xl press w-full" type="button">
-              ▶  ENVIAR MENSAJE
-            </button>
-          </form>
+          <ContactForm />
         </div>
       </section>
     </div>
