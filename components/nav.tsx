@@ -5,13 +5,14 @@ import { useRouter, usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useSession } from "@/components/session-provider";
 
-type Section = "inicio" | "biblioteca" | "salon" | "acceso";
+type Section = "inicio" | "biblioteca" | "salon" | "acerca" | "acceso";
 
 function sectionFor(pathname: string | null): Section | null {
   if (pathname === null) return null;
   if (pathname === "/") return "inicio";
   if (pathname === "/juegos" || pathname.startsWith("/juegos/")) return "biblioteca";
   if (pathname === "/salon") return "salon";
+  if (pathname === "/acerca-de") return "acerca";
   if (pathname === "/acceso") return "acceso";
   return null;
 }
@@ -59,7 +60,9 @@ function NavBar({ active }: { active: Section | null }) {
           <Link href="/salon" className={cls("salon")}>
             Salón de la Fama
           </Link>
-          <AboutDisabled />
+          <Link href="/acerca-de" className={cls("acerca")}>
+            Acerca de
+          </Link>
         </div>
         <div className="spacer"></div>
         <div className="coin-counter">
@@ -92,7 +95,9 @@ function NavBar({ active }: { active: Section | null }) {
         <Link href="/salon" className={cls("salon")} onClick={close}>
           Salón de la Fama
         </Link>
-        <AboutDisabled />
+        <Link href="/acerca-de" className={cls("acerca")} onClick={close}>
+          Acerca de
+        </Link>
         <Link href="/acceso" className={cls("acceso")} onClick={close}>
           {user ? "Cuenta" : "Iniciar Sesión"}
         </Link>
@@ -100,14 +105,5 @@ function NavBar({ active }: { active: Section | null }) {
         <div className="pixel text-[9px] tracking-[0.16em] text-ink-faint">CRÉDITOS · 03</div>
       </aside>
     </>
-  );
-}
-
-/** "Acerca de" visible pero sin página todavía (SPEC 02). No navega. */
-function AboutDisabled() {
-  return (
-    <span className="nav-disabled" aria-disabled="true" title="Próximamente">
-      Acerca de <span className="soon">PRÓXIMAMENTE</span>
-    </span>
   );
 }

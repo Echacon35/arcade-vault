@@ -1322,30 +1322,6 @@ a { color: inherit; text-decoration: none; }
   text-shadow: 0 0 8px rgba(255,0,110,0.55);
 }
 
-/* ===== NAV · enlace deshabilitado (SPEC 02) ===== */
-.av-nav .links .nav-disabled,
-.av-mobile-panel .nav-disabled {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--pixel);
-  color: var(--ink-faint);
-  cursor: not-allowed;
-  user-select: none;
-}
-.av-nav .links .nav-disabled { padding: 10px 14px; font-size: 9px; letter-spacing: 0.16em; }
-.av-mobile-panel .nav-disabled { padding: 14px 12px; font-size: 11px; border-bottom: 1px dashed var(--line-2); }
-.soon {
-  font-family: var(--pixel);
-  font-size: 6px;
-  letter-spacing: 0.12em;
-  line-height: 1;
-  padding: 3px 4px;
-  color: var(--ink-dim);
-  border: 1px solid var(--line-2);
-  background: var(--bg-3);
-}
-
 /* ===== reduced motion (SPEC 02) ===== */
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal.in { opacity: 1; transform: none; transition: none; }
