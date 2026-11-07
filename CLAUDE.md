@@ -25,7 +25,7 @@ Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. So
 
 - `RESEND_API_KEY` — API key de Resend para el formulario de contacto de `/acerca-de`.
 - `CONTACT_TO_EMAIL` — buzón del equipo que recibe los mensajes.
-- `CONTACT_FROM_EMAIL` — remitente en el dominio verificado en Resend, p. ej. `Arcade Vault <contacto@dominio>`.
+- `CONTACT_FROM_EMAIL` — remitente en un dominio verificado en Resend, p. ej. `Arcade Vault <contacto@dominio>`. Sin dominio verificado se puede usar `Arcade Vault <onboarding@resend.dev>` solo para pruebas: Resend únicamente entrega al correo dueño de la cuenta, así que `CONTACT_TO_EMAIL` debe ser ese correo.
 
 Si falta alguna, el formulario muestra el error genérico y la causa queda en el log del servidor; el build no depende de ellas.
 

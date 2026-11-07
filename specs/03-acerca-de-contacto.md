@@ -172,7 +172,8 @@ Reglas transversales (heredadas de SPEC 01 y SPEC 02):
 - **No:** Route Handler `/api/contacto`. Más código y deja un endpoint expuesto que nadie más usa.
 - **Sí:** un solo correo al equipo con `replyTo` del jugador. Coincide con `TE RESPONDEREMOS PRONTO`.
 - **No:** confirmación al jugador. Permitiría usar el formulario para enviar correos a direcciones ajenas.
-- **Sí:** remitente en el dominio verificado del usuario, configurable con `CONTACT_FROM_EMAIL`.
+- **Sí:** remitente configurable con `CONTACT_FROM_EMAIL`. El objetivo es un remitente en un dominio propio verificado en Resend.
+- **Sí (temporal):** mientras `motivus.com` no esté verificado en Resend, se usa `Arcade Vault <onboarding@resend.dev>`. Resend solo entrega desde ese remitente al correo dueño de la cuenta, así que `CONTACT_TO_EMAIL` debe ser ese correo. No sirve para producción. Pasar al dominio propio solo requiere cambiar `CONTACT_FROM_EMAIL`, sin tocar código.
 - **Sí:** estado `ENVIANDO…` con controles deshabilitados. Mínimo cambio sobre el template.
 - **No:** terminal animada durante el envío. Cambia el flujo del template.
 - **Sí:** error con `shake` y una línea `[ERR]` bajo el botón, conservando lo escrito. Reutiliza el lenguaje visual del template.
