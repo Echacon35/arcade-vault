@@ -3,6 +3,8 @@
 .playwright-mcp/*
 !.playwright-mcp/.gitkeep
 
+APIKey.md
+
 # dependencies
 /node_modules
 /.pnp
