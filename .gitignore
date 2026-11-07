@@ -3,6 +3,8 @@
 .playwright-mcp/*
 !.playwright-mcp/.gitkeep
 
+APIKey.md
+
 # dependencies
 /node_modules
 /.pnp
@@ -35,6 +37,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
