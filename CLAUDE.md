@@ -19,6 +19,16 @@ El desarrollo sigue **Spec Driven Design** con las skills `/spec` y `/spec-impl`
 
 No hay framework de tests configurado todavía.
 
+## Variables de entorno
+
+Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. Solo las lee el servidor; ninguna lleva prefijo `NEXT_PUBLIC_`.
+
+- `RESEND_API_KEY` — API key de Resend para el formulario de contacto de `/acerca-de`.
+- `CONTACT_TO_EMAIL` — buzón del equipo que recibe los mensajes.
+- `CONTACT_FROM_EMAIL` — remitente en el dominio verificado en Resend, p. ej. `Arcade Vault <contacto@dominio>`.
+
+Si falta alguna, el formulario muestra el error genérico y la causa queda en el log del servidor; el build no depende de ellas.
+
 ## Skills
 Usa siempre /frontend-design para diseñar interfaz de usuario.
 
