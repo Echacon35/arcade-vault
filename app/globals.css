@@ -524,6 +524,37 @@ a { color: inherit; text-decoration: none; }
   text-shadow: 0 0 8px var(--yellow);
 }
 
+/* Asteroides: rocas vectoriales en contorno cian, nave con muesca y ráfaga amarilla. */
+.cover-asteroides {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(0,245,255,0.18) 0 1px, transparent 1.5px) 0 0/22px 22px,
+    radial-gradient(ellipse at 30% 75%, #002a3a, #000 70%);
+}
+.cover-asteroides::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    /* ráfaga: tres balas entre la nave y la roca grande */
+    radial-gradient(circle at 44% 50%, var(--yellow) 0 2px, transparent 3px),
+    radial-gradient(circle at 51% 44%, var(--yellow) 0 2px, transparent 3px),
+    radial-gradient(circle at 58% 38%, var(--yellow) 0 2px, transparent 3px),
+    /* roca grande, mediana partida en dos y pequeña */
+    radial-gradient(circle at 74% 30%, transparent 0 30px, var(--cyan) 30px 32px, transparent 33px),
+    radial-gradient(circle at 18% 26%, transparent 0 15px, var(--ink) 15px 16.5px, transparent 17.5px),
+    radial-gradient(circle at 26% 18%, transparent 0 9px, var(--ink) 9px 10.5px, transparent 11.5px),
+    radial-gradient(circle at 84% 78%, transparent 0 18px, var(--cyan) 18px 20px, transparent 21px);
+  filter: drop-shadow(0 0 5px rgba(0,245,255,0.7));
+}
+.cover-asteroides::before {
+  content: "";
+  position: absolute; left: 30%; top: 54%;
+  width: 34px; height: 26px;
+  background: var(--cyan);
+  clip-path: polygon(100% 50%, 0 0, 22% 50%, 0 100%);
+  transform: rotate(-38deg);
+  filter: drop-shadow(0 0 8px var(--cyan));
+}
+
 .cover-rana { background: linear-gradient(180deg,#001f2a,#0a0a18); }
 .cover-rana::after {
   content: "";
