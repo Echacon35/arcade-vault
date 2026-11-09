@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Library } from "@/components/library";
+import { SignalLost } from "@/components/signal-lost";
+import { getCatalog } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Biblioteca · Arcade Vault",
@@ -15,7 +18,17 @@ export default function JuegosPage() {
         </div>
       </section>
 
-      <Library />
+      <Suspense fallback={null}>
+        <Catalog />
+      </Suspense>
     </div>
   );
+}
+
+async function Catalog() {
+  const result = await getCatalog();
+
+  if (!result.ok) return <SignalLost />;
+
+  return <Library games={result.data} />;
 }
