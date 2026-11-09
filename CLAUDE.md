@@ -24,13 +24,22 @@ No hay framework de tests configurado todavía.
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. Solo las lee el servidor; ninguna lleva prefijo `NEXT_PUBLIC_`.
+Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. El build no depende de ninguna.
+
+**Resend (solo servidor, sin prefijo `NEXT_PUBLIC_`):**
 
 - `RESEND_API_KEY` — API key de Resend para el formulario de contacto de `/acerca-de`.
 - `CONTACT_TO_EMAIL` — buzón del equipo que recibe los mensajes.
 - `CONTACT_FROM_EMAIL` — remitente en un dominio verificado en Resend, p. ej. `Arcade Vault <contacto@dominio>`. Sin dominio verificado se puede usar `Arcade Vault <onboarding@resend.dev>` solo para pruebas: Resend únicamente entrega al correo dueño de la cuenta, así que `CONTACT_TO_EMAIL` debe ser ese correo.
 
-Si falta alguna, el formulario muestra el error genérico y la causa queda en el log del servidor; el build no depende de ellas.
+Si falta alguna, el formulario muestra el error genérico y la causa queda en el log del servidor.
+
+**Supabase (públicas, con prefijo `NEXT_PUBLIC_`; llegan al navegador):**
+
+- `NEXT_PUBLIC_SUPABASE_URL` — URL del proyecto cloud, `https://<ref>.supabase.co`.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — publishable key (`sb_publishable_...`). Es pública por diseño; la protección la da RLS. Nunca uses aquí la secret / `service_role` key.
+
+Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la variable que falte. Los clientes (`lib/supabase/server.ts` y `lib/supabase/client.ts`) se crean bajo demanda, así que importarlos no exige las variables en build.
 
 ## Skills
 
