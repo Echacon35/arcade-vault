@@ -15,7 +15,10 @@ El desarrollo sigue **Spec Driven Design** con las skills `/spec` y `/spec-impl`
 - `npm run dev` — servidor de desarrollo (http://localhost:3000)
 - `npm run build` — build de producción (también hace el type-check)
 - `npm run start` — sirve el build
-- `npm run lint` — ESLint 9 flat config (`eslint-config-next` core-web-vitals + typescript)
+- `npm run lint` — ESLint 9 flat config (`eslint-config-next` core-web-vitals + typescript + `eslint-config-prettier`)
+- `npm run format` — Prettier sobre todo el repo (config en `.prettierrc.json`, exclusiones en `.prettierignore`)
+
+Hook de Claude Code (`.claude/settings.json` → `.claude/hooks/format-and-lint.mjs`): tras cada Write/Edit, pasa el archivo por Prettier, luego (si es JS/TS) por `eslint --fix` con `no-multiple-empty-lines` en `max: 0` para borrar las líneas en blanco (respeta los template literals), y de nuevo por Prettier. En CSS/JSON borra las líneas en blanco por texto; Markdown solo pasa por Prettier. Es silencioso: los errores de lint que no se puedan corregir automáticamente no bloquean.
 
 No hay framework de tests configurado todavía.
 
@@ -30,6 +33,7 @@ Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. So
 Si falta alguna, el formulario muestra el error genérico y la causa queda en el log del servidor; el build no depende de ellas.
 
 ## Skills
+
 Usa siempre /frontend-design para diseñar interfaz de usuario.
 
 ## Stack y particularidades
