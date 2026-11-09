@@ -843,6 +843,15 @@ a { color: inherit; text-decoration: none; }
 }
 @keyframes typewriter { to { width: 22ch; } }
 @keyframes caret { 50% { border-color: transparent; } }
+/* Partida abandonada con FIN: mismo tecleo, en magenta y más largo. */
+.toast-saved.abandoned {
+  color: var(--magenta);
+  text-shadow: 0 0 8px var(--magenta);
+  border-right-color: var(--magenta);
+  max-width: 100%;
+  animation: typewriter-abandoned 1.6s steps(36) forwards, caret 0.8s steps(1) infinite;
+}
+@keyframes typewriter-abandoned { to { width: 36ch; } }
 
 /* ===== auth ===== */
 .av-auth-wrap {
