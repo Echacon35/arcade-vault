@@ -1,6 +1,6 @@
 # SPEC 05 — Juego real de asteroides
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-11-09
 > **Objetivo:** Portar a TypeScript el juego de asteroides de `references/started-games/02-asteroids` y hacerlo jugable en `/juegos/asteroides/jugar`, dentro del CRT y con el HUD y el modal de fin de partida del reproductor.
