@@ -1,6 +1,6 @@
 # SPEC 04 — Conexión de Supabase con Next.js
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01
 > **Fecha:** 2026-11-09
 > **Objetivo:** Conectar la app de Next.js al proyecto cloud de Supabase que ya existe (dependencias, variables de entorno y clientes listos para usar) sin tocar la base de datos.

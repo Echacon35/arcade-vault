@@ -15,6 +15,17 @@ export type Game = {
 
 export const GAMES: Game[] = [
   {
+    id: "asteroides",
+    title: "ASTEROIDES",
+    short: "Rota, propulsa y parte las rocas en pedazos.",
+    long: "Tu nave flota a la deriva en un campo de rocas. Gira, enciende el propulsor y dispara: cada roca grande se parte en dos medianas y cada mediana en dos pequeñas. Atrapa el power-up 3x para disparar en abanico durante cinco segundos. Limpia el campo y llega otro con más rocas.",
+    cat: "SHOOTER",
+    cover: "cover-asteroides",
+    color: "cyan",
+    best: 0,
+    plays: "0",
+  },
+  {
     id: "bloque-buster",
     title: "BLOQUE BUSTER",
     short: "Rebota la pelota y destruye muros de neón.",
