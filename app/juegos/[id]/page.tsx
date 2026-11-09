@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { GAMES, getGame } from "@/lib/games";
-import { seededScores, seedFor } from "@/lib/scores";
+import { SignalLost } from "@/components/signal-lost";
+import { getCatalog, getCatalogGame, getLeaderboard } from "@/lib/catalog";
 
-export function generateStaticParams() {
-  return GAMES.map((game) => ({ id: game.id }));
+/**
+ * Ids de la tabla `games`. Con `cacheComponents` no se puede devolver un array
+ * vacío, así que si Supabase falla en build se aborta con un error claro.
+ */
+export async function generateStaticParams() {
+  const result = await getCatalog();
+  if (!result.ok) {
+    throw new Error("No se pudo leer la tabla `games` de Supabase para generateStaticParams.");
+  }
+  return result.data.map((game) => ({ id: game.id }));
 }
 
 /**
@@ -23,11 +31,13 @@ export default function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
 
 async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">) {
   const { id } = await params;
-  const game = getGame(id);
+  const [gameResult, leaderboard] = await Promise.all([getCatalogGame(id), getLeaderboard(id, 10)]);
+
+  if (!gameResult.ok) return <SignalLost />;
+
+  const game = gameResult.data;
   if (!game) notFound();
 
-  // Mismas 12 filas que el Salón; se toman las 10 primeras para que coincidan.
-  const rows = seededScores(seedFor(game.id)).slice(0, 10);
   const playColor = game.color === "magenta" ? "magenta" : game.color === "yellow" ? "yellow" : "";
 
   return (
@@ -70,13 +80,23 @@ async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">)
 
         <div className="leaderboard">
           <h3>TOP 10</h3>
-          {rows.map((row) => (
-            <div key={row.rank} className={"lb-row" + (row.rank <= 3 ? ` top${row.rank}` : "")}>
-              <span className="rk">#{String(row.rank).padStart(2, "0")}</span>
-              <span className="pl">{row.name}</span>
-              <span className="sc">{row.score.toLocaleString("es-ES")}</span>
+          {!leaderboard.ok ? (
+            <SignalLost className="p-8" />
+          ) : leaderboard.data.length === 0 ? (
+            <div className="p-8 text-center text-ink-faint">
+              <div className="pixel text-[12px] text-cyan">
+                ▸ SIN PUNTUACIONES — SÉ EL PRIMERO<span className="blink">_</span>
+              </div>
             </div>
-          ))}
+          ) : (
+            leaderboard.data.map((row) => (
+              <div key={row.rank} className={"lb-row" + (row.rank <= 3 ? ` top${row.rank}` : "")}>
+                <span className="rk">#{String(row.rank).padStart(2, "0")}</span>
+                <span className="pl">{row.name}</span>
+                <span className="sc">{row.score.toLocaleString("es-ES")}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
