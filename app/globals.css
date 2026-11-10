@@ -688,6 +688,52 @@ a { color: inherit; text-decoration: none; }
   filter: drop-shadow(0 0 5px rgba(0,245,255,0.85)) drop-shadow(0 0 14px rgba(0,245,255,0.35));
 }
 
+/*
+ * VIBORITA: rejilla cian tenue con la serpiente en L. La cola entra apagada por
+ * la izquierda (fila 8), gira y sube hasta la cabeza clara con ojos (fila 4),
+ * que va a por la manzana magenta dos celdas más arriba. Unidad = una celda =
+ * 1/12 de la altura (container query), como .cover-tetra y .cover-rebote; por
+ * eso todo lo que usa --u va en los pseudo-elementos. Columnas relativas al
+ * centro: el tramo vertical está en 50% + 1u.
+ */
+.cover-viborita {
+  container-type: size;
+  --u: calc(100cqh / 12);
+  --g: calc(0.1 * var(--u));
+  --body: #00ff88;
+  --head: #9dffd0;
+  background: radial-gradient(ellipse at 62% 18%, #00301e, #000 70%);
+}
+.cover-viborita::before,
+.cover-viborita::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+/* Rejilla alineada con las celdas y manzana (hoja, cuerpo y halo) en la celda (50% + 1u, 2u). */
+.cover-viborita::before {
+  background:
+    radial-gradient(ellipse calc(0.22 * var(--u)) calc(0.11 * var(--u)) at calc(50% + 1.72 * var(--u)) calc(2.1 * var(--u)), var(--body) 0 96%, transparent),
+    radial-gradient(circle at calc(50% + 1.5 * var(--u)) calc(2.56 * var(--u)), #ff5c9d 0 calc(0.12 * var(--u)), var(--magenta) calc(0.12 * var(--u)) calc(0.38 * var(--u)), transparent calc(0.38 * var(--u) + 1px)),
+    radial-gradient(circle calc(1.3 * var(--u)) at calc(50% + 1.5 * var(--u)) calc(2.56 * var(--u)), rgba(255,0,110,0.3), transparent),
+    repeating-linear-gradient(90deg, rgba(0,245,255,0.09) 0 1px, transparent 1px var(--u)) 50cqw 0 / var(--u) 100%,
+    repeating-linear-gradient(180deg, rgba(0,245,255,0.09) 0 1px, transparent 1px var(--u)) 0 0 / 100% var(--u);
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat-x, repeat-y;
+}
+/* Serpiente: ojos, cabeza, juntas entre segmentos, tramo vertical (filas 4–8) y tramo horizontal con la cola apagándose. */
+.cover-viborita::after {
+  background:
+    radial-gradient(circle at calc(50% + 1.3 * var(--u)) calc(4.36 * var(--u)), #000 0 calc(0.09 * var(--u)), transparent calc(0.09 * var(--u) + 1px)),
+    radial-gradient(circle at calc(50% + 1.7 * var(--u)) calc(4.36 * var(--u)), #000 0 calc(0.09 * var(--u)), transparent calc(0.09 * var(--u) + 1px)),
+    linear-gradient(var(--head), var(--head)) calc(50cqw + 1 * var(--u) + var(--g)) calc(4 * var(--u) + var(--g)) / calc(var(--u) - 2 * var(--g)) calc(var(--u) - 2 * var(--g)),
+    repeating-linear-gradient(180deg, transparent 0 calc(var(--u) - var(--g)), #000 calc(var(--u) - var(--g)) var(--u)) calc(50cqw + 1 * var(--u)) calc(4 * var(--u) + var(--g) / 2) / var(--u) calc(4 * var(--u)),
+    repeating-linear-gradient(90deg, transparent 0 calc(var(--u) - var(--g)), #000 calc(var(--u) - var(--g)) var(--u)) calc(50cqw - 5 * var(--u) + var(--g) / 2) calc(8 * var(--u)) / calc(6 * var(--u)) var(--u),
+    linear-gradient(var(--body), var(--body)) calc(50cqw + 1 * var(--u) + var(--g)) calc(4 * var(--u) + var(--g)) / calc(var(--u) - 2 * var(--g)) calc(5 * var(--u) - 2 * var(--g)),
+    linear-gradient(90deg, rgba(0,255,136,0.12), rgba(0,255,136,0.55) 45%, var(--body) 85%) calc(50cqw - 5 * var(--u) + var(--g)) calc(8 * var(--u) + var(--g)) / calc(7 * var(--u) - 2 * var(--g)) calc(var(--u) - 2 * var(--g));
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 5px rgba(0,255,136,0.8)) drop-shadow(0 0 14px rgba(0,255,136,0.35));
+}
+
 .cover-rana { background: linear-gradient(180deg,#001f2a,#0a0a18); }
 .cover-rana::after {
   content: "";
