@@ -52,6 +52,8 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 
 Usa siempre /frontend-design para diseñar interfaz de usuario.
 
+Para integrar un juego de `references/started-games/`, usa `/add-game <juego>` (`.claude/skills/add-game/`). Analiza el código original y escribe su spec en Borrador con la receta de integración (motor en `games/<id>/`, `GAME_ENGINES`, `GAMES`, portada, fila en la tabla `games` de Supabase, TOP 10 y Salón). Después se implementa con `/spec-impl`. El contrato de motor y sus extensiones permitidas están en `.claude/skills/add-game/contract.md`.
+
 ## Stack y particularidades
 
 - **Next.js 16.4 (App Router) + React 19.3 + TypeScript strict.** Las APIs difieren de versiones anteriores: consulta `node_modules/next/dist/docs/` (`01-app/`, `03-architecture/`) antes de escribir código.
