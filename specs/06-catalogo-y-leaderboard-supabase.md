@@ -130,15 +130,25 @@ export function createPublicClient(): SupabaseClient<Database>;
 // lib/catalog.ts — import "server-only"
 export type CatalogResult<T> = { ok: true; data: T } | { ok: false };
 
-export type LeaderboardRow = { rank: number; name: string; score: number; date: string }; // date "dd/mm/aaaa"
+export type LeaderboardRow = {
+  rank: number;
+  name: string;
+  score: number;
+  date: string;
+}; // date "dd/mm/aaaa"
 
 export async function getCatalog(): Promise<CatalogResult<Game[]>>;
 // "use cache"; cacheTag("games"). games + game_stats, ordenado por sort_order.
 
-export async function getCatalogGame(id: string): Promise<CatalogResult<Game | null>>;
+export async function getCatalogGame(
+  id: string,
+): Promise<CatalogResult<Game | null>>;
 // "use cache"; cacheTag("games", `game-${id}`). null si no existe → la página llama a notFound().
 
-export async function getLeaderboard(gameId: string, limit: number): Promise<CatalogResult<LeaderboardRow[]>>;
+export async function getLeaderboard(
+  gameId: string,
+  limit: number,
+): Promise<CatalogResult<LeaderboardRow[]>>;
 // "use cache"; cacheTag(`game-${gameId}`). leaderboard ordenado por rank.
 ```
 
@@ -147,7 +157,11 @@ Mapeo a `Game` (el tipo de `lib/games.ts` no cambia): `short_description → sho
 ```ts
 // app/juegos/[id]/jugar/actions.ts — "use server"
 export type SaveScoreResult = { ok: true } | { ok: false; error: string };
-export async function saveScoreAction(input: { gameId: string; name: string; score: number }): Promise<SaveScoreResult>;
+export async function saveScoreAction(input: {
+  gameId: string;
+  name: string;
+  score: number;
+}): Promise<SaveScoreResult>;
 // Valida: name ~ /^[A-Z0-9_]{1,10}$/, score entero entre 0 y 10.000.000, gameId ~ /^[a-z0-9-]+$/.
 // Inserta con createClient() de lib/supabase/server.ts e invalida `game-${gameId}` (y "games" por game_stats).
 // Error genérico al cliente; la causa va a console.error.
@@ -227,15 +241,26 @@ Reglas transversales:
 
 ## Riesgos
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Cualquiera puede insertar puntuaciones falsas con la publishable key. | `CHECK` de rango y formato. Aceptado hasta la spec de Auth/anti-trampas. |
-| Un error de Supabase en el prerender queda cacheado como página vacía. | `CatalogResult` con rama `{ ok: false }` y `cacheLife` corto en esa rama; el paso 1 confirma la API. |
-| `generateStaticParams` no puede devolver un array vacío con `cacheComponents` o falla sin red en build. | El paso 1 lo verifica en la doc local; la tabla siempre tiene al menos `asteroides`. |
-| La API de invalidación (`revalidateTag` vs `updateTag`) cambió en Next 16. | El paso 1 obliga a leer la guía local antes de escribir la Server Action. |
-| Proyectos nuevos de Supabase no conceden permisos por defecto a `anon` en `public`. | `grant` explícitos en la migración y criterio que prueba lectura e insert con la publishable key. |
-| Las vistas saltan RLS si se crean como `security definer`. | `security_invoker = true` y revisión con `get_advisors`. |
-| El `.sql` del repo diverge de lo aplicado. | Criterio que compara con `list_migrations`. |
+| Riesgo                                                                                                  | Mitigación                                                                                           |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Cualquiera puede insertar puntuaciones falsas con la publishable key.                                   | `CHECK` de rango y formato. Aceptado hasta la spec de Auth/anti-trampas.                             |
+| Un error de Supabase en el prerender queda cacheado como página vacía.                                  | `CatalogResult` con rama `{ ok: false }` y `cacheLife` corto en esa rama; el paso 1 confirma la API. |
+| `generateStaticParams` no puede devolver un array vacío con `cacheComponents` o falla sin red en build. | El paso 1 lo verifica en la doc local; la tabla siempre tiene al menos `asteroides`.                 |
+| La API de invalidación (`revalidateTag` vs `updateTag`) cambió en Next 16.                              | El paso 1 obliga a leer la guía local antes de escribir la Server Action.                            |
+| Proyectos nuevos de Supabase no conceden permisos por defecto a `anon` en `public`.                     | `grant` explícitos en la migración y criterio que prueba lectura e insert con la publishable key.    |
+| Las vistas saltan RLS si se crean como `security definer`.                                              | `security_invoker = true` y revisión con `get_advisors`.                                             |
+| El `.sql` del repo diverge de lo aplicado.                                                              | Criterio que compara con `list_migrations`.                                                          |
+
+---
+
+## Problemas conocidos
+
+Detectados al verificar los criterios (2026-11-09). Bloquean pasar la spec a "Implementado"; quedan para otra spec.
+
+- **404 en la navegación al detalle tras guardar (build de producción).** Después de `saveScoreAction` (`updateTag`), la petición RSC de `/juegos/asteroides` responde 404, el navegador hace una recarga completa (error en consola) y la página regenerada queda cacheada con el título y el `noindex` del 404 (`Game Over · Arcade Vault`). Los datos mostrados sí son correctos. `GameDetail` no llama a `notFound()` (comprobado con un log temporal); el HTML del build y `next dev` muestran el título correcto. Sospecha sin confirmar: regeneración de la ruta tras `updateTag` combinada con `partialPrefetching`. Pasos para aislarlo: probar sin `partialPrefetching` y con `revalidateTag(tag, "max")`. Incumple el criterio "La consola no muestra errores…".
+- **Tarjeta de `/juegos` desactualizada tras guardar.** Al volver con `VOLVER AL VAULT` justo después de guardar, la tarjeta seguía mostrando `MEJOR PUNTUACIÓN 0`. Posiblemente relacionado con el anterior.
+- **`update`/`delete` con la publishable key devuelven 204, no error.** No modifican ninguna fila (RLS sin políticas las filtra), pero no "fallan" como pide el criterio. El proyecto sí concede por defecto permisos de tabla a `anon`, al contrario de lo que asume la tabla de riesgos. Arreglo posible: migración con `revoke update, delete on public.scores, public.games from anon, authenticated` (y `revoke insert on public.games`).
+- **Sin verificar:** el criterio de la URL de Supabase rota (las `NEXT_PUBLIC_*` se fijan en el build y un build con URL rota falla en `generateStaticParams`; solo se puede probar con `next dev`) y que `/juegos/rocas/jugar` guarde en `localStorage` (el código no cambió).
 
 ---
 
