@@ -46,6 +46,17 @@ export const GAMES: Game[] = [
     plays: "0",
   },
   {
+    id: "viborita",
+    title: "VIBORITA",
+    short: "Come fruta, crece y no te muerdas la cola.",
+    long: "Guía a la víbora por la rejilla con las flechas o WASD. Cada fruta la alarga un segmento y vale 10 puntos por nivel. Cada 5 frutas subes de nivel y avanza más rápido. Chocar con un muro o con tu propio cuerpo termina la partida.",
+    cat: "ARCADE",
+    cover: "cover-viborita",
+    color: "green",
+    best: 0,
+    plays: "0",
+  },
+  {
     id: "bloque-buster",
     title: "BLOQUE BUSTER",
     short: "Rebota la pelota y destruye muros de neón.",
