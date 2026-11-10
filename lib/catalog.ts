@@ -20,7 +20,12 @@ import { createPublicClient } from "./supabase/public";
 
 export type CatalogResult<T> = { ok: true; data: T } | { ok: false };
 
-export type LeaderboardRow = { rank: number; name: string; score: number; date: string };
+export type LeaderboardRow = {
+  rank: number;
+  name: string;
+  score: number;
+  date: string;
+};
 
 type GameRow = Tables<"games">;
 type StatsRow = Tables<"game_stats">;
@@ -65,10 +70,15 @@ export async function getCatalog(): Promise<CatalogResult<Game[]>> {
 
   const statsById = new Map(stats.data.map((s) => [s.game_id, s]));
   cacheLife("hours");
-  return { ok: true, data: games.data.map((g) => toGame(g, statsById.get(g.id))) };
+  return {
+    ok: true,
+    data: games.data.map((g) => toGame(g, statsById.get(g.id))),
+  };
 }
 
-export async function getCatalogGame(id: string): Promise<CatalogResult<Game | null>> {
+export async function getCatalogGame(
+  id: string,
+): Promise<CatalogResult<Game | null>> {
   "use cache";
   cacheTag("games", `game-${id}`);
 
@@ -79,13 +89,19 @@ export async function getCatalogGame(id: string): Promise<CatalogResult<Game | n
   ]);
 
   if (game.error || stats.error) {
-    console.error(`[catalog] getCatalogGame(${id}) falló:`, game.error ?? stats.error);
+    console.error(
+      `[catalog] getCatalogGame(${id}) falló:`,
+      game.error ?? stats.error,
+    );
     cacheLife("seconds");
     return { ok: false };
   }
 
   cacheLife("hours");
-  return { ok: true, data: game.data ? toGame(game.data, stats.data ?? undefined) : null };
+  return {
+    ok: true,
+    data: game.data ? toGame(game.data, stats.data ?? undefined) : null,
+  };
 }
 
 export async function getLeaderboard(

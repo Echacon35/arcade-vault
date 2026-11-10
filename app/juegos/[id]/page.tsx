@@ -11,7 +11,9 @@ import { getCatalog, getCatalogGame, getLeaderboard } from "@/lib/catalog";
 export async function generateStaticParams() {
   const result = await getCatalog();
   if (!result.ok) {
-    throw new Error("No se pudo leer la tabla `games` de Supabase para generateStaticParams.");
+    throw new Error(
+      "No se pudo leer la tabla `games` de Supabase para generateStaticParams.",
+    );
   }
   return result.data.map((game) => ({ id: game.id }));
 }
@@ -29,16 +31,26 @@ export default function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
   );
 }
 
-async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">) {
+async function GameDetail({
+  params,
+}: Pick<PageProps<"/juegos/[id]">, "params">) {
   const { id } = await params;
-  const [gameResult, leaderboard] = await Promise.all([getCatalogGame(id), getLeaderboard(id, 10)]);
+  const [gameResult, leaderboard] = await Promise.all([
+    getCatalogGame(id),
+    getLeaderboard(id, 10),
+  ]);
 
   if (!gameResult.ok) return <SignalLost />;
 
   const game = gameResult.data;
   if (!game) notFound();
 
-  const playColor = game.color === "magenta" ? "magenta" : game.color === "yellow" ? "yellow" : "";
+  const playColor =
+    game.color === "magenta"
+      ? "magenta"
+      : game.color === "yellow"
+        ? "yellow"
+        : "";
 
   return (
     <div className="av-detail fade-in">
@@ -70,7 +82,10 @@ async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">)
         </div>
 
         <div className="detail-actions">
-          <Link href={`/juegos/${game.id}/jugar`} className={"btn lg " + playColor}>
+          <Link
+            href={`/juegos/${game.id}/jugar`}
+            className={"btn lg " + playColor}
+          >
             JUGAR
           </Link>
           <Link href="/juegos" className="btn lg ghost">
@@ -85,12 +100,16 @@ async function GameDetail({ params }: Pick<PageProps<"/juegos/[id]">, "params">)
           ) : leaderboard.data.length === 0 ? (
             <div className="p-8 text-center text-ink-faint">
               <div className="pixel text-[12px] text-cyan">
-                ▸ SIN PUNTUACIONES — SÉ EL PRIMERO<span className="blink">_</span>
+                ▸ SIN PUNTUACIONES — SÉ EL PRIMERO
+                <span className="blink">_</span>
               </div>
             </div>
           ) : (
             leaderboard.data.map((row) => (
-              <div key={row.rank} className={"lb-row" + (row.rank <= 3 ? ` top${row.rank}` : "")}>
+              <div
+                key={row.rank}
+                className={"lb-row" + (row.rank <= 3 ? ` top${row.rank}` : "")}
+              >
                 <span className="rk">#{String(row.rank).padStart(2, "0")}</span>
                 <span className="pl">{row.name}</span>
                 <span className="sc">{row.score.toLocaleString("es-ES")}</span>
