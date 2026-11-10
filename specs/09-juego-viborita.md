@@ -1,6 +1,6 @@
 # SPEC 09 — Juego real de la viborita
 
-> **Estado:** Aprobado
+> **Estado:** Impletado
 > **Depende de:** SPEC 05, SPEC 06, SPEC 06.5
 > **Fecha:** 2026-11-10
 > **Objetivo:** Crear desde cero un juego de la viborita (snake) con arte vectorial neón original y hacerlo jugable en `/juegos/viborita/jugar` como VIBORITA, con su fila en la tabla `games` de Supabase, su TOP 10 y su pestaña en el Salón de la Fama.
