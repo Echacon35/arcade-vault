@@ -88,6 +88,7 @@ values ('<id>', '<TITLE>', '<short>', '<long>', '<CAT>', 'cover-<id>', '<color>'
 - **Copia en el repo:** el mismo SQL, idéntico, en `supabase/migrations/<version>_add_game_<id>.sql`, donde `<version>` es la que devuelve `list_migrations` tras aplicarla.
 - **Tipos:** sin cambio de esquema, así que **no** se regenera `lib/supabase/database.types.ts`.
 - **Verificación:** `select * from games where id = '<id>'` y `get_advisors` (seguridad) sin avisos nuevos.
+- **Caché del build:** antes de recompilar, borrar el contenido de `.next/cache/fetch-cache/`. Después, comprobar que `.next/server/app/juegos.html` incluye `<TITLE>` (ver "Trampas conocidas").
 
 ## Paso 5 — Verificación y limpieza
 
@@ -132,6 +133,10 @@ Rellénala con datos concretos del código de referencia: nombres de constantes,
 
 - **404 tras guardar (SPEC 06, sin resolver).** En el build de producción, al navegar al detalle justo después de `saveScoreAction`, la petición RSC responde 404 y la página queda con el título del 404. Los criterios de consola se comprueban **cargando la URL directamente**. Debe ir en "Riesgos".
 - **`NEXT_PUBLIC_*` se fijan en el build.** El criterio "URL de Supabase rota" solo se prueba con `next dev`. Si el usuario tiene un `next dev` abierto en el puerto 3000, no puede arrancar otro: hay que pedírselo.
+- **Catálogo desactualizado por `.next/cache/fetch-cache` (SPEC 07, sin resolver).**
+  - **El problema:** Next guarda sin tags las respuestas de `fetch` del cliente de Supabase y las reutiliza entre builds. Tras la migración `add_game_<id>`, el primer `npm run build` puede generar `/juegos` y `/salon` **sin el juego nuevo**, aunque `/juegos/<id>` salga bien.
+  - **En el paso 4 de la receta:** después de `apply_migration` y antes de recompilar, borrar el contenido de `.next/cache/fetch-cache/` y comprobar que `.next/server/app/juegos.html` contiene el título nuevo.
+  - **En la spec:** mencionarlo en "Riesgos" hasta que una spec haga que `createPublicClient` use `fetch` con `cache: "no-store"`. Si ya está arreglado, quitar esta trampa.
 - **Inserts por REST no invalidan la caché.** Solo `saveScoreAction` llama a `updateTag`; para ver datos insertados por otra vía hay que recompilar.
 - **Hook de formateo.** Tras cada Write/Edit, `.claude/hooks/format-and-lint.mjs` pasa Prettier (`printWidth: 80`) y **borra las líneas en blanco** en JS/TS. Hay que releer el archivo antes de editar zonas reformateadas.
 - **`public/` no existe todavía.** La extensión E2 la crea.

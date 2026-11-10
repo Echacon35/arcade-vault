@@ -269,6 +269,19 @@ Reglas transversales:
 
 ---
 
+## Problemas conocidos
+
+Detectado durante el paso 5 (2026-11-10). No se arregla en esta spec, porque toca `lib/supabase/` y está fuera del alcance.
+
+- **El catálogo prerenderizado puede salir desactualizado tras añadir un juego.**
+  - **Qué pasó:** el primer `npm run build` después de aplicar `add_game_tetra` generó `/juegos` solo con ASTEROIDES. `/juegos/tetra` sí salía bien, porque era una consulta nueva.
+  - **Causa:** Next guarda en `.next/cache/fetch-cache` las respuestas de `fetch` que hace el cliente de Supabase, **sin tags**, y las reutiliza entre builds. El build tomó la respuesta de `games?select=*&order=sort_order.asc` de un build anterior a la migración.
+  - **Por qué `updateTag` no lo resuelve:** esas entradas no llevan el tag `games`, así que la invalidación no las alcanza de forma fiable. Puede estar relacionado con la tarjeta desactualizada que anotó SPEC 06.
+  - **Solución temporal:** antes del build que sigue a una migración de datos, borrar el contenido de `.next/cache/fetch-cache/` (y `.next/server/route-cache` si existe), y comprobar con `grep` que `.next/server/app/juegos.html` contiene el juego nuevo.
+  - **Arreglo propuesto (otra spec):** que `createPublicClient` (`lib/supabase/public.ts`) pase a Supabase un `fetch` con `cache: "no-store"`. Así la caché de datos solo la gestiona `"use cache"` con sus tags.
+
+---
+
 ## Lo que **no** está en esta spec
 
 - Tema claro/oscuro, `localStorage` y la UI DOM del original.
