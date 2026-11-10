@@ -1,6 +1,4 @@
-// Rutas provisionales: en el Paso 4 pasan a `constants.ts` (BOUNCE_SRC, BREAK_SRC).
-const BOUNCE_SRC = "/games/rebote/sounds/ball-bounce.mp3";
-const BREAK_SRC = "/games/rebote/sounds/break-sound.mp3";
+import { BOUNCE_SRC, BREAK_SRC } from "./constants";
 export type Sounds = {
   /** Rebote de la pelota en paredes y paleta. */
   bounce(): void;
