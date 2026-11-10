@@ -1,6 +1,6 @@
 # SPEC 08 — Juego real de rebote
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 06, SPEC 06.5
 > **Fecha:** 2026-11-10
 > **Objetivo:** Portar a TypeScript el juego de `references/started-games/04-arkanoid` y hacerlo jugable en `/juegos/rebote/jugar` como REBOTE, con su fila en la tabla `games` de Supabase, su TOP 10 y su pestaña en el Salón de la Fama.
