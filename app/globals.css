@@ -618,6 +618,76 @@ a { color: inherit; text-decoration: none; }
   filter: drop-shadow(0 0 5px rgba(0,255,136,0.9)) drop-shadow(0 0 14px rgba(0,255,136,0.4));
 }
 
+/*
+ * REBOTE: muro magenta monocromo en aparejo a soga (filas desplazadas media
+ * pieza), atravesado por una brecha escalonada que sigue las juntas. La pelota
+ * cian asoma por arriba de la brecha y sus ecos bajan en diagonal hasta la
+ * paleta. Unidad = 1/12 de la altura (container query), como .cover-tetra.
+ * Ladrillo de 2.5u × 1u; juntas en 50% ± 1.25u (filas 0 y 2) y en 50% (fila 1).
+ */
+.cover-rebote {
+  container-type: size;
+  --u: calc(100cqh / 12);
+  --bw: calc(2.5 * var(--u));
+  --brick: #ff006e;
+  --brick-hi: #ff5c9d;
+  --brick-lo: #8f003e;
+  background: radial-gradient(ellipse at 62% 0%, #3d0021, #000 68%);
+}
+.cover-rebote::before,
+.cover-rebote::after {
+  content: "";
+  position: absolute;
+}
+/* Muro: tres filas de 1u desde y = 1u, recortado con la brecha. */
+.cover-rebote::before {
+  left: 0;
+  right: 0;
+  top: var(--u);
+  height: calc(3 * var(--u));
+  background:
+    /* juntas verticales: filas 0 y 2 (desplazadas) y fila 1 */
+    repeating-linear-gradient(90deg, #000 0 2px, transparent 2px var(--bw)) calc(50cqw - 1.25 * var(--u)) 0 / var(--bw) var(--u) repeat-x,
+    repeating-linear-gradient(90deg, #000 0 2px, transparent 2px var(--bw)) 50cqw var(--u) / var(--bw) var(--u) repeat-x,
+    repeating-linear-gradient(90deg, #000 0 2px, transparent 2px var(--bw)) calc(50cqw - 1.25 * var(--u)) calc(2 * var(--u)) / var(--bw) var(--u) repeat-x,
+    /* junta horizontal bajo cada fila */
+    linear-gradient(180deg, transparent calc(100% - 2px), #000 0) 0 0 / 100% var(--u) repeat-y,
+    /* cuerpo del ladrillo con bisel */
+    linear-gradient(180deg, var(--brick-hi) 0 14%, var(--brick) 14% 72%, var(--brick-lo) 72%) 0 0 / 100% var(--u) repeat-y;
+  /* Brecha: fila 0 de +1.25u a +3.75u, fila 1 de 0 a +2.5u, fila 2 de −1.25u a +3.75u. */
+  clip-path: polygon(
+    0 0, 100% 0, 100% 100%,
+    calc(50% + 3.75 * var(--u)) 100%,
+    calc(50% + 3.75 * var(--u)) 66.667%,
+    calc(50% + 2.5 * var(--u)) 66.667%,
+    calc(50% + 2.5 * var(--u)) 33.333%,
+    calc(50% + 3.75 * var(--u)) 33.333%,
+    calc(50% + 3.75 * var(--u)) 0,
+    calc(50% + 1.25 * var(--u)) 0,
+    calc(50% + 1.25 * var(--u)) 33.333%,
+    50% 33.333%,
+    50% 66.667%,
+    calc(50% - 1.25 * var(--u)) 66.667%,
+    calc(50% - 1.25 * var(--u)) 100%,
+    0 100%
+  );
+  filter: drop-shadow(0 0 6px rgba(255,0,110,0.55));
+}
+/* Pelota saliendo por la brecha, sus ecos y la paleta. */
+.cover-rebote::after {
+  inset: 0;
+  background:
+    radial-gradient(circle at calc(50% + 2.5 * var(--u)) calc(1.2 * var(--u)), #fff 0 calc(0.12 * var(--u)), var(--cyan) calc(0.12 * var(--u)) calc(0.38 * var(--u)), transparent calc(0.38 * var(--u) + 1px)),
+    radial-gradient(circle at calc(50% + 1.79 * var(--u)) calc(2.38 * var(--u)), rgba(0,245,255,0.55) 0 calc(0.3 * var(--u)), transparent calc(0.3 * var(--u) + 1px)),
+    radial-gradient(circle at calc(50% + 1.07 * var(--u)) calc(3.57 * var(--u)), rgba(0,245,255,0.36) 0 calc(0.24 * var(--u)), transparent calc(0.24 * var(--u) + 1px)),
+    radial-gradient(circle at calc(50% + 0.3 * var(--u)) calc(4.84 * var(--u)), rgba(0,245,255,0.22) 0 calc(0.18 * var(--u)), transparent calc(0.18 * var(--u) + 1px)),
+    radial-gradient(circle at calc(50% - 0.52 * var(--u)) calc(6.2 * var(--u)), rgba(0,245,255,0.12) 0 calc(0.12 * var(--u)), transparent calc(0.12 * var(--u) + 1px)),
+    /* paleta: centrada en 50% − 3u, cerca del fondo */
+    linear-gradient(var(--ink), var(--ink)) calc(50cqw - 4.5 * var(--u)) calc(10.3 * var(--u)) / calc(3 * var(--u)) calc(0.42 * var(--u));
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 5px rgba(0,245,255,0.85)) drop-shadow(0 0 14px rgba(0,245,255,0.35));
+}
+
 .cover-rana { background: linear-gradient(180deg,#001f2a,#0a0a18); }
 .cover-rana::after {
   content: "";

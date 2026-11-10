@@ -1,6 +1,5 @@
 export type GameCategory = "ARCADE" | "PUZZLE" | "SHOOTER" | "VERSUS";
 export type GameColor = "cyan" | "magenta" | "yellow" | "green";
-
 export type Game = {
   id: string;
   title: string;
@@ -12,7 +11,6 @@ export type Game = {
   best: number;
   plays: string;
 };
-
 export const GAMES: Game[] = [
   {
     id: "asteroides",
@@ -33,6 +31,17 @@ export const GAMES: Game[] = [
     cat: "PUZZLE",
     cover: "cover-tetra",
     color: "green",
+    best: 0,
+    plays: "0",
+  },
+  {
+    id: "rebote",
+    title: "REBOTE",
+    short: "Rebota la pelota y derriba cinco muros de ladrillos.",
+    long: "Mueve la paleta con el ratón o las flechas y mantén la pelota en juego. Cada ladrillo vale 10 puntos y, al limpiar un muro, llega otro con un patrón distinto y una pelota un 10 % más rápida. Tienes tres vidas para superar los cinco niveles.",
+    cat: "ARCADE",
+    cover: "cover-rebote",
+    color: "magenta",
     best: 0,
     plays: "0",
   },
@@ -125,9 +134,7 @@ export const GAMES: Game[] = [
     plays: "4.2K",
   },
 ];
-
 export const CATS = ["TODOS", "ARCADE", "PUZZLE", "SHOOTER", "VERSUS"] as const;
-
 export function getGame(id: string): Game | undefined {
   return GAMES.find((game) => game.id === id);
 }
