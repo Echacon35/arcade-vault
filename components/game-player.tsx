@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { saveScoreAction } from "@/app/juegos/[id]/jugar/actions";
 import { GameCanvas, type GameCanvasHandle } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
 import { GAME_ENGINES } from "@/games/registry";
@@ -11,6 +12,8 @@ import { saveScore } from "@/lib/session";
 
 const LIVES = 3;
 const LEVEL_STEP = 2500;
+
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
@@ -25,7 +28,7 @@ export function GamePlayer({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   // FIN pulsado con motor real: la partida no se puede guardar.
   const [abandoned, setAbandoned] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   // `null` = el jugador no ha editado el nombre; así se usa el de la sesión
   // en cuanto se hidrata desde localStorage.
   const [nameInput, setNameInput] = useState<string | null>(null);
@@ -37,7 +40,10 @@ export function GamePlayer({ game }: { game: Game }) {
   // Partida simulada: solo para juegos sin motor.
   useEffect(() => {
     if (engine || over || paused) return;
-    const t = setInterval(() => setScore((s) => s + Math.floor(10 + Math.random() * 90)), 220);
+    const t = setInterval(
+      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
+      220,
+    );
     return () => clearInterval(t);
   }, [engine, over, paused]);
 
@@ -79,15 +85,30 @@ export function GamePlayer({ game }: { game: Game }) {
     setEngineLevel(1);
     setPaused(false);
     setOver(false);
-    setSaved(false);
+    setSaveState("idle");
     setAbandoned(false);
     canvasRef.current?.restart();
   };
 
-  const save = () => {
-    saveScore({ game: game.id, score, name });
-    setSaved(true);
+  const save = async () => {
+    // Juegos simulados: siguen en localStorage (la FK de `scores` los rechazaría).
+    if (!engine) {
+      saveScore({ game: game.id, score, name });
+      setSaveState("saved");
+      return;
+    }
+
+    // Juegos con motor: Supabase vía Server Action.
+    setSaveState("saving");
+    try {
+      const result = await saveScoreAction({ gameId: game.id, name, score });
+      setSaveState(result.ok ? "saved" : "error");
+    } catch {
+      setSaveState("error");
+    }
   };
+
+  const saving = saveState === "saving";
 
   return (
     <div className="av-player fade-in">
@@ -117,7 +138,10 @@ export function GamePlayer({ game }: { game: Game }) {
           <button className="btn magenta" onClick={finish}>
             FIN
           </button>
-          <button className="btn ghost" onClick={() => router.push(`/juegos/${game.id}`)}>
+          <button
+            className="btn ghost"
+            onClick={() => router.push(`/juegos/${game.id}`)}
+          >
             SALIR
           </button>
         </div>
@@ -150,7 +174,9 @@ export function GamePlayer({ game }: { game: Game }) {
               <div>
                 <div className="pixel neon-yellow text-[22px]">EN PAUSA</div>
                 <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">
-                  {engine ? "PULSA REANUDAR O P PARA CONTINUAR" : "PULSA REANUDAR PARA CONTINUAR"}
+                  {engine
+                    ? "PULSA REANUDAR O P PARA CONTINUAR"
+                    : "PULSA REANUDAR PARA CONTINUAR"}
                 </div>
               </div>
             </div>
@@ -170,18 +196,35 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{score.toLocaleString("es-ES")}</div>
             {abandoned ? (
-              <div className="toast-saved abandoned">▸ PARTIDA ABANDONADA — NO SE GUARDA_</div>
-            ) : !saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) => setNameInput(e.target.value.toUpperCase().slice(0, 10))}
-                  placeholder="TUS INICIALES"
-                />
-                <button className="btn yellow" onClick={save}>
-                  GUARDAR PUNTUACIÓN
-                </button>
+              <div className="toast-saved abandoned">
+                ▸ PARTIDA ABANDONADA — NO SE GUARDA_
               </div>
+            ) : saveState !== "saved" ? (
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    disabled={saving}
+                    onChange={(e) =>
+                      setNameInput(e.target.value.toUpperCase().slice(0, 10))
+                    }
+                    placeholder="TUS INICIALES"
+                  />
+                  <button
+                    className="btn yellow"
+                    onClick={save}
+                    disabled={saving}
+                    aria-busy={saving}
+                  >
+                    {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
+                  </button>
+                </div>
+                {saveState === "error" && (
+                  <div role="alert" className="toast-saved abandoned">
+                    ▸ NO SE PUDO GUARDAR — REINTENTA_
+                  </div>
+                )}
+              </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}
@@ -189,7 +232,10 @@ export function GamePlayer({ game }: { game: Game }) {
               <button className="btn" onClick={restart}>
                 JUGAR DE NUEVO
               </button>
-              <button className="btn magenta" onClick={() => router.push("/juegos")}>
+              <button
+                className="btn magenta"
+                onClick={() => router.push("/juegos")}
+              >
                 VOLVER AL VAULT
               </button>
             </div>

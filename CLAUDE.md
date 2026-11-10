@@ -24,7 +24,7 @@ No hay framework de tests configurado todavía.
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. El build no depende de ninguna.
+Copia `.env.example` a `.env.local` (ignorado por git) y rellena los valores. El build necesita las de Supabase (ver abajo); las de Resend no.
 
 **Resend (solo servidor, sin prefijo `NEXT_PUBLIC_`):**
 
@@ -39,7 +39,14 @@ Si falta alguna, el formulario muestra el error genérico y la causa queda en el
 - `NEXT_PUBLIC_SUPABASE_URL` — URL del proyecto cloud, `https://<ref>.supabase.co`.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — publishable key (`sb_publishable_...`). Es pública por diseño; la protección la da RLS. Nunca uses aquí la secret / `service_role` key.
 
-Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la variable que falte. Los clientes (`lib/supabase/server.ts` y `lib/supabase/client.ts`) se crean bajo demanda, así que importarlos no exige las variables en build.
+Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la variable que falte. Los clientes (`lib/supabase/server.ts`, `lib/supabase/client.ts` y `lib/supabase/public.ts`) se crean bajo demanda, así que importarlos no exige las variables. Pero `npm run build` sí las necesita y necesita red: `generateStaticParams` de `/juegos/[id]` y el prerender de `/juegos` y del detalle leen la base de datos (SPEC 06). Sin ellas, o con Supabase caído, el build falla.
+
+## Supabase
+
+- **Esquema:** tablas `games` y `scores`, vistas `leaderboard` y `game_stats`, con RLS (lectura pública, insert anónimo en `scores`, sin update/delete).
+- **Migraciones:** se aplican con `apply_migration` del MCP de Supabase (no se usa la Supabase CLI). Cada migración aplicada tiene su `.sql` idéntico en `supabase/migrations/`, con el nombre `<version>_<nombre>.sql` y la misma versión que devuelve `list_migrations`. Es el historial versionado del esquema.
+- **Tipos:** `lib/supabase/database.types.ts` se genera con `generate_typescript_types` del MCP; regenéralo tras cada migración, no lo edites a mano.
+- **Acceso:** solo `lib/catalog.ts` (lecturas cacheadas con `"use cache"` + `cacheTag`, cliente público sin cookies) y las Server Actions (p. ej. `app/juegos/[id]/jugar/actions.ts`, que invalida con `updateTag`) hablan con Supabase. Los componentes no importan `@supabase/*` ni `lib/supabase/*`.
 
 ## Skills
 
