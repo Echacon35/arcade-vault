@@ -1,3 +1,4 @@
+import { isTypingTarget } from "../shared/input";
 import type {
   GameCallbacks,
   GameFactory,
@@ -63,16 +64,6 @@ const isPlayKey = (code: string) =>
   (PLAY_KEYS as readonly string[]).includes(code);
 const isPauseKey = (code: string) =>
   (PAUSE_KEYS as readonly string[]).includes(code);
-/** Foco en un campo de texto (p. ej. el nombre del modal): el juego no toca el teclado. */
-function isTypingTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement ||
-    target.isContentEditable
-  );
-}
 function createState(): State {
   const state: State = {
     board: createBoard(),
