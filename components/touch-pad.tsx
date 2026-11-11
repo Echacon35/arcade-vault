@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
 import {
   dispatchKey,
@@ -20,16 +21,31 @@ type TouchPadProps = {
 };
 /** Temporizadores de autorrepetición de un botón pulsado. */
 type RepeatTimers = { delay?: number; interval?: number };
-/** Forma de la cruceta según los botones que tiene (ver `.tp-dpad[data-shape]`). */
-function dpadShape(buttons: TouchButton[]) {
-  const ids = new Set(buttons.map((b) => b.id));
-  if (ids.has("up")) return "cross";
-  if (ids.has("down")) return "row3";
-  return "row2";
+/** Direcciones de la cruz, siempre las cuatro (SPEC 11). */
+const DIRECTIONS = ["up", "left", "right", "down"] as const;
+type Direction = (typeof DIRECTIONS)[number];
+/** Triángulos de `references/gamepad-assets/gamepad.html` (viewBox 24×24). */
+const ARROW_PATHS: Record<Direction, string> = {
+  up: "M12 4 L20 16 L4 16 Z",
+  right: "M8 4 L20 12 L8 20 Z",
+  down: "M4 8 L20 8 L12 20 Z",
+  left: "M16 4 L16 20 L4 12 Z",
+};
+function Arrow({ dir }: { dir: Direction }) {
+  return (
+    <svg className="tp-arrow" viewBox="0 0 24 24" aria-hidden>
+      <path d={ARROW_PATHS[dir]} fill="currentColor" />
+    </svg>
+  );
+}
+/** Letra por posición: la última acción es A y la anterior, B. */
+function actionLetters(count: number): ("A" | "B")[] {
+  return count === 2 ? ["B", "A"] : count === 1 ? ["A"] : [];
 }
 /**
- * Pad táctil (SPEC 10): cada botón emite `keydown`/`keyup` sintéticos con su `code`.
- * Multitáctil por `pointerId`; un botón sigue pulsado mientras lo mantenga algún dedo.
+ * Pad táctil (SPEC 10) con el aspecto del Gamepad MK-II (SPEC 11): cada botón emite
+ * `keydown`/`keyup` sintéticos con su `code`. Multitáctil por `pointerId`; un botón
+ * sigue pulsado mientras lo mantenga algún dedo.
  */
 export function TouchPad({ layout, active }: TouchPadProps) {
   // pointerId → botón que mantiene ese dedo.
@@ -100,13 +116,19 @@ export function TouchPad({ layout, active }: TouchPadProps) {
   }, [active]);
   // Al desmontar se sueltan las teclas que sigan pulsadas.
   useEffect(() => () => onRelease(), []);
-  const renderButton = (button: TouchButton) => (
+  /** Botón táctil con la lógica de SPEC 10; el aspecto lo dan `className` y `children`. */
+  const renderButton = (
+    button: TouchButton,
+    className: string,
+    data: Record<`data-${string}`, string>,
+    children: ReactNode,
+  ) => (
     <button
       key={button.id}
       type="button"
       tabIndex={-1}
-      className="tp-btn"
-      data-id={button.id}
+      className={className}
+      {...data}
       data-pressed={pressed.has(button.id) || undefined}
       aria-label={button.ariaLabel}
       onPointerDown={(e) => onPointerDown(e, button)}
@@ -115,9 +137,33 @@ export function TouchPad({ layout, active }: TouchPadProps) {
       onLostPointerCapture={onPointerEnd}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <span aria-hidden>{button.label}</span>
+      {children}
     </button>
   );
+  const renderKey = (dir: Direction) => {
+    const button = layout.dpad.find((b) => b.id === dir);
+    // Dirección que el juego no usa: se ve atenuada y no recibe toques.
+    if (!button) {
+      return (
+        <span
+          key={dir}
+          className="tp-key"
+          data-dir={dir}
+          data-unused=""
+          aria-hidden
+        >
+          <Arrow dir={dir} />
+        </span>
+      );
+    }
+    return renderButton(
+      button,
+      "tp-key",
+      { "data-dir": dir },
+      <Arrow dir={dir} />,
+    );
+  };
+  const letters = actionLetters(layout.actions.length);
   return (
     <div
       className="touch-pad"
@@ -126,11 +172,42 @@ export function TouchPad({ layout, active }: TouchPadProps) {
       data-active={active || undefined}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="tp-dpad" data-shape={dpadShape(layout.dpad)}>
-        {layout.dpad.map(renderButton)}
+      <div className="tp-side tp-side-dpad">
+        <div className="tp-dpad">
+          {DIRECTIONS.map(renderKey)}
+          <div className="tp-hub" aria-hidden>
+            <span className="tp-gem" />
+          </div>
+        </div>
       </div>
       {layout.actions.length > 0 && (
-        <div className="tp-actions">{layout.actions.map(renderButton)}</div>
+        <div className="tp-side tp-side-actions">
+          <div className="tp-actions">
+            {layout.actions.map((button, i) =>
+              renderButton(
+                button,
+                "tp-ab",
+                { "data-letter": letters[i] },
+                <>
+                  <span className="tp-ring" aria-hidden />
+                  <span className="tp-letter" aria-hidden>
+                    {letters[i]}
+                  </span>
+                </>,
+              ),
+            )}
+          </div>
+          <p className="tp-legend" aria-hidden>
+            {layout.actions.map((button, i) => (
+              <span key={button.id} className="tp-legend-item">
+                <span className="tp-legend-letter" data-letter={letters[i]}>
+                  {letters[i]}
+                </span>{" "}
+                {button.label}
+              </span>
+            ))}
+          </p>
+        </div>
       )}
     </div>
   );
