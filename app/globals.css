@@ -1412,6 +1412,45 @@
     display: flex;
     gap: 10px;
   }
+  .hud-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  /* SPEC 10: HUD en pantallas estrechas (≤ 720 px), sin scroll horizontal a 360 px */
+  @media (max-width: 720px) {
+    .player-hud {
+      padding: 12px;
+      gap: 12px;
+    }
+    .hud-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+      width: 100%;
+    }
+    .hud-stat .v {
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+    /* Selector de skins en su propia fila; si no cabe, scroll dentro de sí mismo. */
+    .hud-skins {
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .hud-skins > * {
+      flex-shrink: 0;
+    }
+    .hud-actions {
+      width: 100%;
+    }
+    .hud-actions .btn {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 8px;
+    }
+  }
   .crt {
     position: relative;
     border-radius: 28px;
@@ -1651,6 +1690,24 @@
       transition: none;
     }
   }
+  /* Pantallas muy estrechas (360 px): teclas de 48 px para que cruceta y acciones quepan en una fila. */
+  @media (max-width: 400px) {
+    .touch-pad {
+      --tp-key: 48px;
+      --tp-round: 60px;
+      gap: 10px;
+      padding: 12px;
+    }
+    .tp-dpad {
+      gap: 6px;
+    }
+    .tp-actions {
+      gap: 10px;
+    }
+    .tp-actions .tp-btn {
+      font-size: 8px;
+    }
+  }
   /* maqueta táctil: en vertical el pad va debajo del CRT; en horizontal, a los lados */
   .player-stage[data-touch] .crt {
     padding: 10px;
@@ -1676,8 +1733,9 @@
       grid-column: 2;
       grid-row: 1;
       justify-self: center;
-      /* Canvas y pad caben a la vez: pantalla 4:3 con alto = 100dvh − marco (≈70 px). */
-      width: calc((100dvh - 70px) * 4 / 3 + 20px);
+      /* Canvas y pad caben a la vez bajo la barra sticky (≤ 90 px):
+         pantalla 4:3 con alto = 100dvh − barra (92 px) − marco del CRT (≈70 px). */
+      width: calc((100dvh - 162px) * 4 / 3 + 20px);
       max-width: 100%;
     }
     .player-stage[data-touch] .tp-actions {

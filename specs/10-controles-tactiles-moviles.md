@@ -1,6 +1,6 @@
 # SPEC 10 — Controles táctiles para jugar en móvil
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 07, SPEC 08, SPEC 09
 > **Fecha:** 2026-11-11
 > **Objetivo:** Hacer jugables ASTEROIDES, TETRA, REBOTE y VIBORITA en dispositivos con pantalla táctil mediante un pad en pantalla que emite teclas sintéticas, más gestos sobre el canvas en REBOTE y VIBORITA.

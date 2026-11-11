@@ -119,7 +119,7 @@ export function GamePlayer({ game }: { game: Game }) {
   return (
     <div className="av-player fade-in">
       <div className="player-hud">
-        <div className="flex flex-wrap gap-6">
+        <div className="hud-stats">
           <div className="hud-stat">
             <div className="l">Jugador</div>
             <div className="v text-ink">{name}</div>
@@ -141,7 +141,7 @@ export function GamePlayer({ game }: { game: Game }) {
           <div
             role="group"
             aria-label="Skin del juego"
-            className="flex items-stretch border border-line bg-bg"
+            className="hud-skins flex items-stretch border border-line bg-bg"
           >
             <span className="flex items-center px-3 font-mono text-[10px] tracking-[0.14em] text-ink-faint">
               SKIN
