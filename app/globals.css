@@ -1541,29 +1541,56 @@
     background: var(--green);
     box-shadow: 0 0 6px var(--green);
   }
-  /* ===== touch pad (SPEC 10): panel de mandos bajo el CRT ===== */
+  /* ===== touch pad (SPEC 10) con el aspecto del Gamepad MK-II (SPEC 11, references/gamepad-assets) ===== */
   .touch-pad {
-    --tp-key: 60px;
-    --tp-round: 74px;
+    --tp-key: 50px;
+    --tp-gap: 3px;
+    --tp-ab: 74px;
+    --tp-ab-gap: 22px;
+    --tp-arrow: 22px;
+    --tp-letter: 22px;
+    --tp-legend: 8px;
+    --tp-shell-bg: linear-gradient(180deg, #1c1c28 0%, #0c0c14 100%);
+    --tp-shell-shadow:
+      0 30px 80px -30px rgba(0, 245, 255, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.02),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 18px;
-    padding: 16px 18px;
-    background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+    gap: 18px;
+    width: 100%;
+    max-width: 760px;
+    margin: 18px auto 0;
+    padding: 26px 30px;
+    background: var(--tp-shell-bg);
     border: 1px solid var(--line);
-    clip-path: polygon(
-      14px 0,
-      calc(100% - 14px) 0,
-      100% 14px,
-      100% 100%,
-      0 100%,
-      0 14px
-    );
+    border-radius: 22px;
+    box-shadow: var(--tp-shell-shadow);
   }
-  .touch-pad > * {
-    transition: opacity 160ms ease;
+  /* borde interior cian y trama de puntos de la carcasa */
+  .touch-pad::before,
+  .touch-pad::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+  .touch-pad::before {
+    inset: 4px;
+    border: 1px solid rgba(0, 245, 255, 0.14);
+    border-radius: 18px;
+  }
+  .touch-pad::after {
+    inset: 0;
+    border-radius: inherit;
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px
+    );
+    background-size: 8px 8px;
+    opacity: 0.6;
   }
   .touch-pad,
   .touch-pad * {
@@ -1573,139 +1600,272 @@
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
-  /* En los bloques, no en el panel: en horizontal el panel es `display: contents`. */
-  .touch-pad:not([data-active]) > * {
+  .tp-side {
+    position: relative;
+    z-index: 1;
+  }
+  .tp-side-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  /* En los controles, no en la carcasa: en pausa o con el modal de fin se atenúan. */
+  .tp-dpad,
+  .tp-actions,
+  .tp-legend {
+    transition: opacity 160ms ease;
+  }
+  .touch-pad:not([data-active]) :is(.tp-dpad, .tp-actions, .tp-legend) {
     opacity: 0.45;
   }
-  .tp-btn {
-    position: relative;
+  /* cruceta: cruz fija 3×3 con el centro en medio */
+  .tp-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, var(--tp-key));
+    grid-template-rows: repeat(3, var(--tp-key));
+    grid-template-areas: ". up ." "left hub right" ". down .";
+    gap: var(--tp-gap);
+  }
+  .tp-key[data-dir="up"] {
+    grid-area: up;
+  }
+  .tp-key[data-dir="down"] {
+    grid-area: down;
+  }
+  .tp-key[data-dir="left"] {
+    grid-area: left;
+  }
+  .tp-key[data-dir="right"] {
+    grid-area: right;
+  }
+  .tp-key {
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    font-family: var(--pixel);
+    color: var(--ink-dim);
+    background: linear-gradient(180deg, #1a1a25, #0a0a12);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    box-shadow:
+      0 4px 0 #050507,
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.6);
     cursor: pointer;
     transition:
-      transform 60ms ease,
-      background 80ms ease,
-      box-shadow 80ms ease,
-      color 80ms ease;
+      transform 80ms,
+      box-shadow 140ms,
+      color 140ms,
+      border-color 140ms,
+      background 140ms;
   }
-  /* cruceta: teclas cian con esquinas cortadas, como .btn */
-  .tp-dpad {
-    display: grid;
-    gap: 8px;
-    grid-auto-columns: var(--tp-key);
-    grid-auto-rows: var(--tp-key);
+  .tp-arrow {
+    width: var(--tp-arrow);
+    height: var(--tp-arrow);
+    transition: filter 140ms;
   }
-  .tp-dpad[data-shape="cross"] {
-    grid-template-areas: ". up ." "left . right" ". down .";
-  }
-  .tp-dpad[data-shape="row3"] {
-    grid-template-areas: "left down right";
-  }
-  .tp-dpad[data-shape="row2"] {
-    grid-template-areas: "left right";
-  }
-  .tp-dpad .tp-btn[data-id="up"] {
-    grid-area: up;
-  }
-  .tp-dpad .tp-btn[data-id="down"] {
-    grid-area: down;
-  }
-  .tp-dpad .tp-btn[data-id="left"] {
-    grid-area: left;
-  }
-  .tp-dpad .tp-btn[data-id="right"] {
-    grid-area: right;
-  }
-  .tp-dpad .tp-btn {
-    width: var(--tp-key);
-    height: var(--tp-key);
-    font-size: 18px;
+  .tp-key[data-pressed] {
+    transform: translateY(3px);
     color: var(--cyan);
-    background: rgba(0, 245, 255, 0.04);
-    border: 1px solid var(--cyan);
-    clip-path: polygon(
-      8px 0,
-      100% 0,
-      100% calc(100% - 8px),
-      calc(100% - 8px) 100%,
-      0 100%,
-      0 8px
-    );
-    text-shadow: 0 0 6px rgba(0, 245, 255, 0.6);
+    background: linear-gradient(180deg, #08161e, #030a0e);
+    border-color: var(--cyan);
+    box-shadow:
+      0 1px 0 #050507,
+      inset 0 0 16px rgba(0, 245, 255, 0.45),
+      0 0 16px rgba(0, 245, 255, 0.5);
   }
-  .tp-dpad .tp-btn[data-pressed] {
-    transform: translateY(2px);
-    background: rgba(0, 245, 255, 0.24);
-    box-shadow: inset 0 0 14px rgba(0, 245, 255, 0.55);
-    color: #fff;
+  .tp-key[data-pressed] .tp-arrow {
+    filter: drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 12px var(--cyan));
   }
-  /* acciones: botones redondos de recreativa; el último es el principal (magenta) */
-  .tp-actions {
+  /* dirección que el juego no usa: presente por forma, pero apagada e inerte */
+  .tp-key[data-unused] {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .tp-hub {
+    grid-area: hub;
     display: flex;
     align-items: center;
-    gap: 14px;
-  }
-  .tp-actions .tp-btn {
-    --tp-c: var(--yellow);
-    --tp-glow: rgba(245, 255, 0, 0.5);
-    width: var(--tp-round);
-    height: var(--tp-round);
-    border-radius: 50%;
-    font-size: 9px;
-    letter-spacing: 0.04em;
-    color: var(--tp-c);
-    background: radial-gradient(circle at 50% 38%, #1d1d29, #07070b 72%);
-    border: 2px solid var(--tp-c);
+    justify-content: center;
+    background: radial-gradient(circle at 50% 50%, #181822 0%, #08080d 80%);
+    border: 1px solid rgba(0, 245, 255, 0.15);
+    border-radius: 6px;
     box-shadow:
-      0 0 10px var(--tp-glow),
-      0 4px 0 #050507;
+      inset 0 0 12px rgba(0, 0, 0, 0.8),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
-  .tp-actions .tp-btn:last-child {
-    --tp-c: var(--magenta);
-    --tp-glow: rgba(255, 0, 110, 0.5);
+  .tp-gem {
+    width: 12px;
+    height: 12px;
+    background: var(--cyan);
+    box-shadow:
+      0 0 10px var(--cyan),
+      inset 0 0 4px rgba(0, 0, 0, 0.5);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    animation: tp-pulse-led 2s ease-in-out infinite;
   }
-  .tp-actions .tp-btn::before {
-    content: "";
+  .touch-pad:not([data-active]) .tp-gem {
+    animation: none;
+  }
+  @keyframes tp-pulse-led {
+    50% {
+      opacity: 0.35;
+      transform: scale(0.85);
+    }
+  }
+  /* acciones: B cian a la izquierda, A magenta a la derecha */
+  .tp-actions {
+    display: grid;
+    grid-auto-flow: column;
+    gap: var(--tp-ab-gap);
+    align-items: center;
+    justify-items: center;
+  }
+  .tp-ab {
+    --ab-mid: rgba(255, 0, 110, 0.7);
+    --ab-deep: rgba(110, 0, 40, 0.95);
+    --ab-glow: rgba(255, 0, 110, 0.4);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tp-ab);
+    height: var(--tp-ab);
+    padding: 0;
+    color: var(--magenta);
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle at 32% 26%,
+        rgba(255, 255, 255, 0.25),
+        transparent 50%
+      ),
+      radial-gradient(circle at 50% 55%, var(--ab-mid), var(--ab-deep) 75%);
+    box-shadow:
+      0 6px 0 #050507,
+      0 0 22px var(--ab-glow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition:
+      transform 80ms,
+      box-shadow 140ms;
+  }
+  .tp-ab[data-letter="B"] {
+    --ab-mid: rgba(0, 200, 230, 0.7);
+    --ab-deep: rgba(0, 50, 70, 0.95);
+    --ab-glow: rgba(0, 245, 255, 0.4);
+    color: var(--cyan);
+  }
+  .tp-letter {
+    position: relative;
+    z-index: 2;
+    font-family: var(--pixel);
+    font-size: var(--tp-letter);
+    letter-spacing: 0.02em;
+    color: #fff;
+    text-shadow:
+      0 0 8px var(--magenta),
+      0 0 18px var(--magenta),
+      0 1px 0 rgba(0, 0, 0, 0.6);
+  }
+  .tp-ab[data-letter="B"] .tp-letter {
+    text-shadow:
+      0 0 8px var(--cyan),
+      0 0 18px var(--cyan),
+      0 1px 0 rgba(0, 0, 0, 0.6);
+  }
+  .tp-ring {
     position: absolute;
-    inset: 5px;
+    inset: -8px;
+    border: 1px dashed currentColor;
     border-radius: 50%;
-    border: 1px solid var(--tp-c);
-    opacity: 0.35;
-    pointer-events: none;
+    opacity: 0;
+    transition:
+      opacity 140ms,
+      transform 200ms;
   }
-  .tp-actions .tp-btn[data-pressed] {
-    transform: translateY(3px);
-    color: var(--bg);
-    background: radial-gradient(circle at 50% 38%, #fff, var(--tp-c) 58%);
+  .tp-ab[data-pressed] {
+    transform: translateY(4px) scale(0.97);
     box-shadow:
-      0 0 26px var(--tp-glow),
-      0 0 8px var(--tp-c),
-      0 1px 0 #050507;
+      0 1px 0 #050507,
+      0 0 36px var(--ab-glow),
+      inset 0 0 18px rgba(0, 0, 0, 0.5);
+  }
+  .tp-ab[data-pressed] .tp-ring {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  /* leyenda: qué hace cada letra en este juego (decorativa, la accesibilidad va en aria-label) */
+  .tp-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 10px;
+    max-width: calc(var(--tp-ab) * 2 + var(--tp-ab-gap) + 40px);
+    margin: 0;
+    font-family: var(--pixel);
+    font-size: var(--tp-legend);
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+  .tp-legend-item {
+    white-space: nowrap;
+  }
+  .tp-legend-item + .tp-legend-item::before {
+    content: "·";
+    margin-right: 10px;
+    color: var(--ink-faint);
+  }
+  .tp-legend-letter {
+    color: var(--magenta);
+  }
+  .tp-legend-letter[data-letter="B"] {
+    color: var(--cyan);
   }
   @media (prefers-reduced-motion: reduce) {
-    .tp-btn {
+    .tp-key,
+    .tp-arrow,
+    .tp-ab,
+    .tp-ring,
+    .tp-dpad,
+    .tp-actions,
+    .tp-legend {
       transition: none;
     }
+    .tp-gem {
+      animation: none;
+    }
   }
-  /* Pantallas muy estrechas (360 px): teclas de 48 px para que cruceta y acciones quepan en una fila. */
+  /* tamaños de la referencia para móvil */
+  @media (max-width: 620px) {
+    .touch-pad {
+      --tp-key: 46px;
+      --tp-ab: 64px;
+      --tp-ab-gap: 16px;
+      gap: 14px;
+      padding: 16px 18px;
+      border-radius: 16px;
+    }
+    .touch-pad::before {
+      border-radius: 12px;
+    }
+  }
+  /* pantallas muy estrechas (360 px): un escalón más para que cruz y A/B quepan en una fila */
   @media (max-width: 400px) {
     .touch-pad {
-      --tp-key: 48px;
-      --tp-round: 60px;
+      --tp-key: 42px;
+      --tp-ab: 56px;
+      --tp-ab-gap: 14px;
+      --tp-arrow: 19px;
+      --tp-letter: 18px;
+      --tp-legend: 7px;
       gap: 10px;
-      padding: 12px;
-    }
-    .tp-dpad {
-      gap: 6px;
-    }
-    .tp-actions {
-      gap: 10px;
-    }
-    .tp-actions .tp-btn {
-      font-size: 8px;
+      padding: 14px 12px;
     }
   }
   /* maqueta táctil: en vertical el pad va debajo del CRT; en horizontal, a los lados */
@@ -1722,10 +1882,48 @@
       align-items: center;
       gap: 16px;
     }
+    /* El pad se reparte en dos medias carcasas: el contenedor deja de dibujarse. */
     .player-stage[data-touch] .touch-pad {
       display: contents;
     }
-    .player-stage[data-touch] .tp-dpad {
+    .player-stage[data-touch] .touch-pad::before,
+    .player-stage[data-touch] .touch-pad::after {
+      content: none;
+    }
+    .player-stage[data-touch] .tp-side {
+      padding: 20px 16px;
+      background: var(--tp-shell-bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--tp-shell-shadow);
+    }
+    .player-stage[data-touch] .tp-side::before,
+    .player-stage[data-touch] .tp-side::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+    }
+    .player-stage[data-touch] .tp-side::before {
+      inset: 4px;
+      border: 1px solid rgba(0, 245, 255, 0.14);
+      border-radius: 14px;
+    }
+    .player-stage[data-touch] .tp-side::after {
+      inset: 0;
+      border-radius: inherit;
+      background-image: radial-gradient(
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px
+      );
+      background-size: 8px 8px;
+      opacity: 0.6;
+    }
+    /* Los controles quedan por encima de la trama de la media carcasa. */
+    .player-stage[data-touch] :is(.tp-dpad, .tp-actions, .tp-legend) {
+      position: relative;
+      z-index: 1;
+    }
+    .player-stage[data-touch] .tp-side-dpad {
       grid-column: 1;
       grid-row: 1;
     }
@@ -1738,10 +1936,9 @@
       width: calc((100dvh - 162px) * 4 / 3 + 20px);
       max-width: 100%;
     }
-    .player-stage[data-touch] .tp-actions {
+    .player-stage[data-touch] .tp-side-actions {
       grid-column: 3;
       grid-row: 1;
-      flex-direction: column;
     }
   }
   /* fake in-screen game */
