@@ -2,7 +2,10 @@
 export type TouchButton = {
   /** Único dentro de la distribución, p. ej. "left", "fire". */
   id: string;
-  /** Texto o glifo del botón: "◀", "FUEGO". */
+  /**
+   * Cruceta: glifo de referencia ("◀"); el pad dibuja flechas SVG (SPEC 11).
+   * Acciones: texto de la leyenda bajo los botones A/B ("FUEGO").
+   */
   label: string;
   /** `KeyboardEvent.code` que emite: "ArrowLeft", "Space". */
   code: string;
@@ -12,10 +15,13 @@ export type TouchButton = {
   ariaLabel: string;
 };
 export type TouchLayout = {
-  /** Bloque izquierdo. */
+  /** Bloque izquierdo, siempre en cruz. ids admitidos: "up" | "down" | "left" | "right". */
   dpad: TouchButton[];
-  /** Bloque derecho (puede estar vacío). */
-  actions: TouchButton[];
+  /**
+   * Bloque derecho: 0–2 acciones (SPEC 11). La última es A (magenta) y la anterior, B (cian).
+   * Su `label` es el texto de la leyenda.
+   */
+  actions: [] | [TouchButton] | [TouchButton, TouchButton];
   /** Deslizar sobre el canvas emite flechas (VIBORITA). */
   swipe?: boolean;
 };

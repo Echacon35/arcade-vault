@@ -1,5 +1,4 @@
 import type { TouchLayout } from "../shared/touch";
-
 /** SPEC 10: girar a la izquierda; propulsar y disparar a la derecha. */
 export const ASTEROIDES_TOUCH: TouchLayout = {
   dpad: [
@@ -17,7 +16,12 @@ export const ASTEROIDES_TOUCH: TouchLayout = {
     },
   ],
   actions: [
-    { id: "thrust", label: "▲", code: "ArrowUp", ariaLabel: "Propulsar" },
+    {
+      id: "thrust",
+      label: "PROPULSAR",
+      code: "ArrowUp",
+      ariaLabel: "Propulsar",
+    },
     { id: "fire", label: "FUEGO", code: "Space", ariaLabel: "Disparar" },
   ],
 };
