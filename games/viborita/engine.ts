@@ -1,13 +1,15 @@
 import { isTypingTarget } from "../shared/input";
+import { DEFAULT_SKIN } from "../shared/skins";
 import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   GameStats,
+  SkinId,
 } from "../types";
 import {
   CELL,
-  COLORS,
   COLS,
   FRUIT_POINTS,
   H,
@@ -18,6 +20,7 @@ import {
   START_LIVES,
   W,
 } from "./constants";
+import { type Skin, SKINS } from "./skins";
 import {
   type Cell,
   type Dir,
@@ -108,9 +111,9 @@ function update(state: State, dt: number) {
     advance(state);
   }
 }
-function drawGrid(ctx: CanvasRenderingContext2D) {
-  ctx.strokeStyle = COLORS.grid;
-  ctx.lineWidth = 1;
+function drawGrid(ctx: CanvasRenderingContext2D, skin: Skin) {
+  ctx.strokeStyle = skin.palette.grid;
+  ctx.lineWidth = skin.gridLineWidth;
   ctx.beginPath();
   for (let c = 1; c < COLS; c++) {
     ctx.moveTo(c * CELL + 0.5, 0);
@@ -122,29 +125,81 @@ function drawGrid(ctx: CanvasRenderingContext2D) {
   }
   ctx.stroke();
 }
-/** Manzana neón: cuerpo magenta con glow, tallo y hoja verdes. */
-function drawFruit(ctx: CanvasRenderingContext2D, fruit: Cell) {
+/** Manzana en pixel-art (RETRO): 7 × 7 píxeles de 3 px. S = tallo, L = hoja, F = fruta. */
+const PIXEL_FRUIT = [
+  "...SLL.",
+  ".FFSFF.",
+  "FFFFFFF",
+  "FFFFFFF",
+  "FFFFFFF",
+  ".FFFFF.",
+  "..F.F..",
+] as const;
+const FRUIT_PIXEL = 3;
+function drawPixelFruit(
+  ctx: CanvasRenderingContext2D,
+  fruit: Cell,
+  skin: Skin,
+) {
+  const size = PIXEL_FRUIT.length * FRUIT_PIXEL;
+  const x0 = fruit.col * CELL + (CELL - size) / 2;
+  const y0 = fruit.row * CELL + (CELL - size) / 2;
+  const { fruit: body, stem, leaf } = skin.palette;
+  const fills: Record<string, string> = { F: body, S: stem, L: leaf };
+  PIXEL_FRUIT.forEach((line, r) => {
+    for (let c = 0; c < line.length; c++) {
+      const fill = fills[line[c]];
+      if (!fill) continue;
+      ctx.fillStyle = fill;
+      ctx.fillRect(
+        x0 + c * FRUIT_PIXEL,
+        y0 + r * FRUIT_PIXEL,
+        FRUIT_PIXEL,
+        FRUIT_PIXEL,
+      );
+    }
+  });
+}
+/** Manzana: cuerpo redondo, tallo y hoja (con brillo y contorno según la skin). */
+function drawFruit(ctx: CanvasRenderingContext2D, fruit: Cell, skin: Skin) {
+  if (skin.pixelated) {
+    drawPixelFruit(ctx, fruit, skin);
+    return;
+  }
+  const { palette, glow, outlineWidth } = skin;
   const cx = fruit.col * CELL + CELL / 2;
   const cy = fruit.row * CELL + CELL / 2 + 1;
   ctx.save();
-  ctx.shadowColor = COLORS.fruit;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = COLORS.fruit;
+  ctx.shadowColor = palette.fruit;
+  ctx.shadowBlur = glow.fruit;
+  ctx.fillStyle = palette.fruit;
   ctx.beginPath();
   ctx.arc(cx, cy, 8, 0, Math.PI * 2);
   ctx.fill();
-  ctx.shadowColor = COLORS.leaf;
-  ctx.shadowBlur = 6;
-  ctx.strokeStyle = COLORS.leaf;
-  ctx.lineWidth = 2;
+  if (outlineWidth > 0) {
+    ctx.strokeStyle = palette.fruitStroke;
+    ctx.lineWidth = outlineWidth;
+    ctx.stroke();
+  }
+  ctx.shadowColor = palette.leaf;
+  ctx.shadowBlur = glow.leaf;
+  ctx.strokeStyle = palette.stem;
+  ctx.lineWidth = skin.stemWidth;
+  ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(cx, cy - 7);
   ctx.quadraticCurveTo(cx, cy - 11, cx + 2, cy - 12);
   ctx.stroke();
-  ctx.fillStyle = COLORS.leaf;
+  ctx.fillStyle = palette.leaf;
   ctx.beginPath();
   ctx.ellipse(cx + 5, cy - 11, 4, 2, -0.5, 0, Math.PI * 2);
   ctx.fill();
+  if (outlineWidth > 0) {
+    // La hoja es pequeña: contorno algo más fino para que no se la coma.
+    ctx.strokeStyle = palette.fruitStroke;
+    ctx.lineWidth = outlineWidth * 0.75;
+    ctx.stroke();
+  }
   ctx.restore();
 }
 const DIR_VEC: Record<Dir, { x: number; y: number }> = {
@@ -153,15 +208,31 @@ const DIR_VEC: Record<Dir, { x: number; y: number }> = {
   left: { x: -1, y: 0 },
   right: { x: 1, y: 0 },
 };
-function drawSnake(ctx: CanvasRenderingContext2D, state: State) {
+/** Margen visual de cada segmento dentro de su celda (21 × 21 px). */
+const SEGMENT_INSET = 2;
+function drawSnake(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  const { palette, glow, outlineWidth, cornerRadius } = skin;
+  const size = CELL - SEGMENT_INSET * 2;
   ctx.save();
-  ctx.shadowColor = COLORS.snake;
-  ctx.shadowBlur = 10;
+  ctx.shadowColor = palette.snake;
+  ctx.shadowBlur = glow.snake;
+  ctx.strokeStyle = palette.snakeStroke;
+  ctx.lineWidth = outlineWidth;
   // De la cola a la cabeza, para que la cabeza quede encima.
   for (let i = state.snake.length - 1; i >= 0; i--) {
     const { col, row } = state.snake[i];
-    ctx.fillStyle = i === 0 ? COLORS.head : COLORS.snake;
-    ctx.fillRect(col * CELL + 2, row * CELL + 2, CELL - 4, CELL - 4);
+    const x = col * CELL + SEGMENT_INSET;
+    const y = row * CELL + SEGMENT_INSET;
+    ctx.fillStyle = i === 0 ? palette.head : palette.snake;
+    if (cornerRadius > 0) {
+      ctx.beginPath();
+      ctx.roundRect(x, y, size, size, cornerRadius);
+      ctx.fill();
+      if (outlineWidth > 0) ctx.stroke();
+    } else {
+      ctx.fillRect(x, y, size, size);
+      if (outlineWidth > 0) ctx.strokeRect(x, y, size, size);
+    }
   }
   ctx.restore();
   // Ojos orientados en la dirección de avance.
@@ -170,44 +241,47 @@ function drawSnake(ctx: CanvasRenderingContext2D, state: State) {
   const cy = head.row * CELL + CELL / 2;
   const f = DIR_VEC[state.dir];
   const side = { x: -f.y, y: f.x };
-  ctx.fillStyle = COLORS.eye;
+  ctx.fillStyle = palette.eye;
   for (const s of [-1, 1]) {
+    const ex = cx + f.x * 4 + side.x * 5 * s;
+    const ey = cy + f.y * 4 + side.y * 5 * s;
+    if (skin.pixelated) {
+      ctx.fillRect(Math.round(ex) - 2, Math.round(ey) - 2, 4, 4);
+      continue;
+    }
     ctx.beginPath();
-    ctx.arc(
-      cx + f.x * 4 + side.x * 5 * s,
-      cy + f.y * 4 + side.y * 5 * s,
-      2.5,
-      0,
-      Math.PI * 2,
-    );
+    ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
     ctx.fill();
   }
 }
-function drawHint(ctx: CanvasRenderingContext2D) {
+function drawHint(ctx: CanvasRenderingContext2D, skin: Skin) {
   ctx.save();
-  ctx.font = "20px monospace";
+  ctx.font = skin.hintFont;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = COLORS.hint;
-  ctx.shadowColor = COLORS.hint;
-  ctx.shadowBlur = 8;
+  ctx.fillStyle = skin.palette.hint;
+  ctx.shadowColor = skin.palette.hint;
+  ctx.shadowBlur = skin.glow.hint;
   ctx.fillText(HINT, W / 2, (START_HEAD.row + 3) * CELL);
   ctx.restore();
 }
-function draw(ctx: CanvasRenderingContext2D, state: State) {
-  ctx.fillStyle = COLORS.bg;
+function draw(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  ctx.imageSmoothingEnabled = !skin.pixelated;
+  ctx.fillStyle = skin.palette.bg;
   ctx.fillRect(0, 0, W, H);
-  drawGrid(ctx);
-  drawFruit(ctx, state.fruit);
-  drawSnake(ctx, state);
-  if (state.phase === "waiting") drawHint(ctx);
+  drawGrid(ctx, skin);
+  drawFruit(ctx, state.fruit, skin);
+  drawSnake(ctx, state, skin);
+  if (state.phase === "waiting") drawHint(ctx, skin);
 }
 export const createViboritaGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D no disponible");
+  let skin: Skin = SKINS[options?.skin ?? DEFAULT_SKIN];
   let state = createState();
   let rafId: number | null = null;
   let lastTime: number | null = null;
@@ -248,7 +322,7 @@ export const createViboritaGame: GameFactory = (
     const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, MAX_DT);
     lastTime = ts;
     update(state, dt);
-    draw(ctx, state);
+    draw(ctx, state, skin);
     sync();
     if (state.phase === "gameover") return;
     rafId = requestAnimationFrame(loop);
@@ -283,13 +357,13 @@ export const createViboritaGame: GameFactory = (
       state.turns = [];
       state.acc = 0;
       state.phase = "playing";
-      draw(ctx, state);
+      draw(ctx, state, skin);
       return;
     }
     state.turns = enqueueTurn(state.turns, dir, state.dir);
   };
   window.addEventListener("keydown", onKeyDown);
-  draw(ctx, state);
+  draw(ctx, state, skin);
   emitStats();
   start();
   return {
@@ -310,9 +384,15 @@ export const createViboritaGame: GameFactory = (
       state = createState();
       lastStats = null;
       gameOverNotified = false;
-      draw(ctx, state);
+      draw(ctx, state, skin);
       emitStats();
       start();
+    },
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id];
+      // Con el bucle parado (pausa o fin) se redibuja ya; en juego lo hace el siguiente frame.
+      if (rafId === null) draw(ctx, state, skin);
     },
     destroy() {
       if (destroyed) return;

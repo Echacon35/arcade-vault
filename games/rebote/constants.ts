@@ -1,3 +1,4 @@
+import { SKINS } from "./skins";
 /**
  * Constantes de REBOTE (SPEC 08), portadas de
  * `references/started-games/04-arkanoid/game.js` sin cambiar la mecánica.
@@ -28,12 +29,8 @@ export const BLOCKS_ORIGIN_Y = 80;
 export const BLOCK_POINTS = 10;
 export const START_LIVES = 3;
 export const LAST_LEVEL = 5;
-/** Paleta neón del Vault para el fondo y los textos de carga y error. */
-export const COLORS = {
-  bg: "#000",
-  loading: "#00f5ff",
-  error: "#ff006e",
-} as const;
+/** Paleta neón del Vault (fondo, carga y error): alias de la skin NEÓN de `skins.ts`. */
+export const COLORS = SKINS.neon.palette;
 export const SPRITESHEET_SRC = "/games/rebote/spritesheet-breakout.png";
 export const BOUNCE_SRC = "/games/rebote/sounds/ball-bounce.mp3";
 export const BREAK_SRC = "/games/rebote/sounds/break-sound.mp3";

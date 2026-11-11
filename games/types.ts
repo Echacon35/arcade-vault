@@ -8,14 +8,22 @@ export type GameCallbacks = {
   onPauseToggle: () => void;
 };
 
+/** Skins (temas visuales) de la extensión E4. Solo cambian la apariencia. */
+export type SkinId = "neon" | "retro" | "clasico" | "pastel";
+
+export type GameOptions = { skin?: SkinId };
+
 export type GameInstance = {
   pause(): void;
   resume(): void;
   restart(): void;
   destroy(): void;
+  /** E4: cambia la skin en caliente, sin reiniciar ni tocar el estado; redibuja también en pausa. */
+  setSkin?(skin: SkinId): void;
 };
 
 export type GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ) => GameInstance;

@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { saveScoreAction } from "@/app/juegos/[id]/jugar/actions";
 import { GameCanvas, type GameCanvasHandle } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
-import { GAME_ENGINES } from "@/games/registry";
-import type { GameStats } from "@/games/types";
+import { GAME_ENGINES, GAME_SKINS } from "@/games/registry";
+import { DEFAULT_SKIN, SKIN_LABELS, SKIN_SWATCHES } from "@/games/shared/skins";
+import type { GameStats, SkinId } from "@/games/types";
 import type { Game } from "@/lib/games";
 import { saveScore } from "@/lib/session";
 
@@ -20,6 +21,9 @@ export function GamePlayer({ game }: { game: Game }) {
   const { user } = useSession();
   // Motor real si el juego está registrado; si no, partida simulada.
   const engine = GAME_ENGINES[game.id];
+  // E4: skins del motor; sin entrada en GAME_SKINS no hay selector.
+  const skins = engine ? GAME_SKINS[game.id] : undefined;
+  const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
   const canvasRef = useRef<GameCanvasHandle>(null);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(LIVES);
@@ -131,6 +135,45 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="v">{String(level).padStart(2, "0")}</div>
           </div>
         </div>
+        {skins && (
+          <div
+            role="group"
+            aria-label="Skin del juego"
+            className="flex items-stretch border border-line bg-bg"
+          >
+            <span className="flex items-center px-3 font-mono text-[10px] tracking-[0.14em] text-ink-faint">
+              SKIN
+            </span>
+            {skins.map((id) => {
+              const active = id === skin;
+              const [bg, fg] = SKIN_SWATCHES[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={active}
+                  // Sin foco al hacer clic: flechas y espacio siguen yendo al juego.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setSkin(id)}
+                  className={`flex cursor-pointer items-center gap-2 border-l border-line px-3 py-2.5 font-pixel text-[9px] tracking-[0.12em] transition-colors ${
+                    active
+                      ? "bg-cyan/10 text-cyan [text-shadow:0_0_6px_rgba(0,245,255,0.5)]"
+                      : "bg-transparent text-ink-dim hover:text-ink"
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={`size-2.5 shrink-0 border ${active ? "border-cyan" : "border-ink-faint"}`}
+                    style={{
+                      background: `linear-gradient(135deg, ${bg} 50%, ${fg} 50%)`,
+                    }}
+                  />
+                  {SKIN_LABELS[id]}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="hud-actions">
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
             {paused ? "REANUDAR" : "PAUSA"}
@@ -156,6 +199,7 @@ export function GamePlayer({ game }: { game: Game }) {
               title={game.title}
               paused={paused}
               over={over}
+              skin={skin}
               onStats={handleStats}
               onGameOver={handleGameOver}
               onPauseToggle={togglePause}
@@ -170,7 +214,10 @@ export function GamePlayer({ game }: { game: Game }) {
             </div>
           )}
           {paused && (
-            <div className="crt-content z-[5] bg-black/60">
+            // PASTEL es la única skin de fondo claro: el velo se oscurece para que el texto se lea.
+            <div
+              className={`crt-content z-[5] ${skin === "pastel" ? "bg-black/80" : "bg-black/60"}`}
+            >
               <div>
                 <div className="pixel neon-yellow text-[22px]">EN PAUSA</div>
                 <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">

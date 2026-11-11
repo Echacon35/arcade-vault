@@ -17,22 +17,29 @@ export type GameCallbacks = {
   onPauseToggle: () => void; // P / Esc dentro del juego
 };
 
+export type SkinId = "neon" | "retro" | "clasico" | "pastel"; // E4
+export type GameOptions = { skin?: SkinId }; // E4
+
 export type GameInstance = {
   pause(): void;
   resume(): void;
   restart(): void;
   destroy(): void;
+  setSkin?(skin: SkinId): void; // E4, opcional
 };
 
 export type GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions, // E4, opcional
 ) => GameInstance;
 ```
 
 ### `games/registry.ts`
 
 `GAME_ENGINES: Partial<Record<string, GameFactory>>`, indexado por el `id` del catálogo. Un juego sin motor usa la partida simulada de `GamePlayer`.
+
+`GAME_SKINS: Partial<Record<string, readonly SkinId[]>>` (E4): skins que soporta cada motor. Sin entrada, no hay selector de skin.
 
 ### `components/game-canvas.tsx`
 
@@ -112,6 +119,28 @@ Cada extensión es un **paso propio al principio del plan** de la spec. Debe dej
 - No hay control de volumen ni silencio en la interfaz: queda fuera de alcance salvo que el usuario lo pida en su propia spec.
 
 **Criterio:** al pausar o al salir con `SALIR` no queda ningún sonido sonando.
+
+### E4 — Skins (temas visuales)
+
+**Cuándo hace falta:** siempre que un juego con motor reciba skins. La aplica el agente `skin-designer` (`.claude/agents/skin-designer.md`) juego a juego; su registro está en `references/games-with-themes.md`. **Ya está aplicada en la plataforma** (primera vez con ASTEROIDES): los juegos nuevos solo añaden sus skins.
+
+**Infraestructura (compartida):**
+
+- `games/types.ts`: `SkinId` (`neon`, `retro`, `clasico`, `pastel`), `GameOptions = { skin?: SkinId }`, tercer parámetro opcional `options` en `GameFactory` y método opcional `setSkin?(skin)` en `GameInstance`. Los motores sin skins compilan sin cambios.
+- `games/shared/skins.ts`: `SKIN_IDS`, `DEFAULT_SKIN = "neon"`, `SKIN_LABELS` (`NEÓN`, `RETRO`, `CLÁSICO`, `PASTEL`), `SKIN_SWATCHES` (muestra del selector) e `isSkinId`.
+- `games/registry.ts`: `GAME_SKINS`.
+- `components/game-canvas.tsx`: prop `skin`; se pasa en `options` al crear la instancia (sin ser dependencia del efecto, para no reiniciar) y un efecto aparte llama a `instance.setSkin?.(skin)` cuando cambia.
+- `components/game-player.tsx`: selector `SKIN` entre el HUD y `PAUSA`/`FIN`/`SALIR`, solo si `GAME_SKINS[game.id]` existe. Arranca en `DEFAULT_SKIN`, se conserva en `JUGAR DE NUEVO`, y sus botones no toman el foco (`onMouseDown` con `preventDefault`) para que flechas y espacio sigan llegando al juego. Con `pastel` el velo de `EN PAUSA` pasa de `bg-black/60` a `bg-black/80`.
+
+**Por juego:**
+
+- `games/<id>/skins.ts` con `SKINS: Record<SkinId, Skin>`; `Skin` lleva la paleta (mismas claves en las cuatro, derivadas de la neón) y flags de estilo (brillo, trazo, fuentes, pixelado…).
+- `COLORS` de `constants.ts` queda como alias de `SKINS.neon.palette`.
+- El motor lee `SKINS[options?.skin ?? DEFAULT_SKIN]`; ningún color, `shadowBlur`, `lineWidth` ni fuente literal fuera de `skins.ts`. `setSkin` reasigna la skin y redibuja si el bucle está parado.
+- Sprites (E2): `neon` usa los originales; las demás dibujan vectores o tiñen en un canvas offscreen creado dentro de la factory.
+- Se añade el `id` a `GAME_SKINS`.
+
+**Criterio:** cambiar de skin en mitad de la partida (también en pausa) no reinicia ni altera puntuación, vidas, nivel ni posiciones; los juegos fuera de `GAME_SKINS` se ven y juegan igual y sin selector.
 
 ---
 

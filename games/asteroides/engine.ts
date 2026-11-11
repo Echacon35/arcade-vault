@@ -1,13 +1,15 @@
 import { isTypingTarget } from "../shared/input";
+import { DEFAULT_SKIN } from "../shared/skins";
 import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   GameStats,
+  SkinId,
 } from "../types";
 import {
   ASTEROID_PARTICLES_PER_SIZE,
-  COLORS,
   H,
   LEVEL_ASTEROIDS_BASE,
   MAX_DT,
@@ -33,6 +35,7 @@ import {
   dist,
   rand,
 } from "./entities";
+import { SKINS, type Skin } from "./skins";
 type Phase = "playing" | "dead" | "gameover";
 type State = {
   ship: Ship;
@@ -192,29 +195,79 @@ function update(
   // Nivel completado
   if (state.asteroids.length === 0) nextLevel(state);
 }
-function draw(ctx: CanvasRenderingContext2D, state: State) {
-  ctx.fillStyle = COLORS.background;
+/** Lienzo de baja resolución para las skins pixeladas (`pixelScale > 1`). */
+type PixelBuffer = {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  scale: number;
+};
+/** Fondo y piezas: es lo que se pixela en RETRO. */
+function drawWorld(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = skin.palette.background;
   ctx.fillRect(0, 0, W, H);
-  state.particles.forEach((p) => p.draw(ctx));
-  state.asteroids.forEach((a) => a.draw(ctx));
-  state.powerUps.forEach((p) => p.draw(ctx));
-  state.bullets.forEach((b) => b.draw(ctx));
-  state.ship.draw(ctx);
+  state.particles.forEach((p) => p.draw(ctx, skin));
+  state.asteroids.forEach((a) => a.draw(ctx, skin));
+  state.powerUps.forEach((p) => p.draw(ctx, skin));
+  state.bullets.forEach((b) => b.draw(ctx, skin));
+  state.ship.draw(ctx, skin);
+  ctx.shadowBlur = 0;
+}
+/** Texto del canvas: siempre a resolución completa para que se lea en todas las skins. */
+function drawText(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  state.powerUps.forEach((p) => p.drawLabel(ctx, skin));
   // Único HUD dentro del canvas: el disparo triple activo.
   if (state.ship.tripleShot > 0) {
-    ctx.fillStyle = COLORS.powerUp;
-    ctx.font = "15px monospace";
+    ctx.shadowBlur = skin.glow;
+    ctx.shadowColor = skin.glow > 0 ? skin.palette.hudText : "transparent";
+    ctx.fillStyle = skin.palette.hudText;
+    ctx.font = skin.hudFont;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(`3x  ${state.ship.tripleShot.toFixed(1)}s`, 14, 26);
   }
+  ctx.shadowBlur = 0;
+}
+function draw(
+  ctx: CanvasRenderingContext2D,
+  state: State,
+  skin: Skin,
+  buffer: PixelBuffer | null,
+) {
+  if (buffer) {
+    buffer.ctx.setTransform(1 / buffer.scale, 0, 0, 1 / buffer.scale, 0, 0);
+    drawWorld(buffer.ctx, state, skin);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(buffer.canvas, 0, 0, W, H);
+  } else {
+    drawWorld(ctx, state, skin);
+  }
+  drawText(ctx, state, skin);
 }
 export const createAsteroidsGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D no disponible");
+  let skin = SKINS[options?.skin ?? DEFAULT_SKIN];
+  // Se crea bajo demanda (nunca al importar el módulo) y se reutiliza entre cambios de skin.
+  let pixelCanvas: HTMLCanvasElement | null = null;
+  const pixelBuffer = (): PixelBuffer | null => {
+    if (skin.pixelScale <= 1) return null;
+    pixelCanvas ??= document.createElement("canvas");
+    const w = Math.ceil(W / skin.pixelScale);
+    const h = Math.ceil(H / skin.pixelScale);
+    if (pixelCanvas.width !== w) pixelCanvas.width = w;
+    if (pixelCanvas.height !== h) pixelCanvas.height = h;
+    const pctx = pixelCanvas.getContext("2d");
+    return pctx
+      ? { canvas: pixelCanvas, ctx: pctx, scale: skin.pixelScale }
+      : null;
+  };
+  let buffer = pixelBuffer();
+  const render = () => draw(ctx, state, skin, buffer);
   const keys = new Set<string>();
   const justPressed = new Set<string>();
   let state = createState();
@@ -247,7 +300,7 @@ export const createAsteroidsGame: GameFactory = (
     const shoot = justPressed.has("Space");
     justPressed.delete("Space");
     update(state, dt, keys, shoot);
-    draw(ctx, state);
+    render();
     emitStats();
     if (state.phase === "gameover") {
       // El motor se detiene; el modal de React toma el relevo.
@@ -317,6 +370,13 @@ export const createAsteroidsGame: GameFactory = (
       gameOverNotified = false;
       start();
     },
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id];
+      buffer = pixelBuffer();
+      // Con el bucle parado (pausa o fin) se redibuja ya; en juego lo hace el siguiente frame.
+      if (rafId === null) render();
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
@@ -324,6 +384,8 @@ export const createAsteroidsGame: GameFactory = (
       clearInput();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      pixelCanvas = null;
+      buffer = null;
     },
   };
 };

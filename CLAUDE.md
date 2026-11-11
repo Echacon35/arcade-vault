@@ -67,6 +67,7 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 - **Registro:** `games/registry.ts` → `GAME_ENGINES`, indexado por el `id` del catálogo. Cada motor vive en `games/<id>/` (`engine.ts`, `constants.ts` y módulos propios). Utilidades compartidas en `games/shared/` (p. ej. `isTypingTarget` para no capturar teclas mientras se escribe el nombre).
 - **Canvas:** siempre 800×600 (`components/game-canvas.tsx`); el HUD de React solo muestra puntuación, vidas y nivel. Todo lo demás se dibuja dentro del canvas.
 - **Assets y sonido** (extensiones E2/E3, aplicadas por REBOTE): en `public/games/<id>/…`, cargados con `new Image()` / `new Audio()` dentro de la factory, nunca al importar el módulo.
+- **Skins (E4, aplicada):** cada juego define las suyas en `games/<id>/skins.ts` (mínimo `neon`, `retro`, `clasico`, `pastel`) y se registra en `GAME_SKINS`; las aplica el agente `skin-designer` (registro en `references/games-with-themes.md`).
 - **E1 (vidas opcionales) no está aplicada:** `GameStats.lives` sigue siendo `number`; TETRA emite `1`/`0` en lugar de `null`.
 - **Doble registro del juego:** además de `GAME_ENGINES` y la fila en Supabase, cada juego va en `GAMES` de `lib/games.ts` (lo usan la landing y `generateStaticParams` de `/juegos/[id]/jugar`) y su portada `.cover-<id>` en `app/globals.css`.
 - **juegos** ver archivo references\implemented-games.md cuando necesites revisar por los juegos implementadosy como implementar uno nuevo
@@ -75,6 +76,9 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 
 - `/spec` y `/spec-impl` — de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Instaladas en `.claude/skills/` y `.agents/skills/`, versionadas en `skills-lock.json`.
 - `/add-game <juego>` (`.claude/skills/add-game/`) — para integrar un juego de `references/started-games/`. Especialización de `/spec`: analiza el código original y escribe su spec en Borrador con la receta de integración (motor en `games/<id>/`, `GAME_ENGINES`, `GAMES`, portada, fila en la tabla `games` de Supabase, TOP 10 y Salón). No escribe código; después se implementa con `/spec-impl`. Archivos de apoyo: `recipe.md` (receta y trampas conocidas), `contract.md` (contrato de motor y extensiones E1–E3) y `game-spec-template.md`.
+- Agente `game-planner` (`.claude/agents/game-planner.md`) — planifica y decide qué juego nuevo encaja en la plataforma. Su memoria de sugerencias (con estado) está en `references/game-suggestions-todo.md`; no escribe código.
+- Agente `game-jam` (`.claude/agents/game-jam.md`) — recibe un tema, diseña un juego original y escribe sus specs por fases en `specs/game-jam/<id>/` (`01-<id>-motor.md`, `02-<id>-integracion.md` y, si aporta, `03-<id>-pulido.md`), en Borrador. Plantillas en `references/game-jam/`. No escribe código ni toca la memoria de `game-planner`. Las specs se implementan con `/spec-impl` pasando la ruta completa.
+- Agente `skin-designer` (`.claude/agents/skin-designer.md`) — recibe el `id` de un juego y garantiza que tenga al menos las skins `neon`, `retro`, `clasico` y `pastel`; si faltan, las implementa en `games/<id>/skins.ts` (la primera vez monta la extensión E4: `SkinId`, `setSkin`, `GAME_SKINS` y selector en `GamePlayer`). Su memoria está en `references/games-with-themes.md`.
 - `/frontend-design` — úsala siempre para diseñar interfaz de usuario. Las maquetas de referencia de la UI están en `references/Templates/`.
 
 ## Problemas conocidos

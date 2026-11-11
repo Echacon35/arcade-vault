@@ -1,3 +1,4 @@
+import { SKINS } from "./skins";
 /**
  * Constantes de VIBORITA (SPEC 09). No hay juego de referencia: estos valores
  * son la única fuente de verdad de la mecánica.
@@ -25,14 +26,5 @@ export const TURN_QUEUE_MAX = 2;
 export const FRUIT_POINTS = 10;
 export const FRUITS_PER_LEVEL = 5;
 export const START_LIVES = 1;
-/** Paleta neón del Vault. */
-export const COLORS = {
-  bg: "#000",
-  grid: "rgba(0, 245, 255, 0.08)",
-  snake: "#00ff88",
-  head: "#9dffd0",
-  eye: "#000",
-  fruit: "#ff006e",
-  leaf: "#00ff88",
-  hint: "#00f5ff",
-} as const;
+/** Paleta neón del Vault (SPEC 09). Las skins viven en `skins.ts`. */
+export const COLORS = SKINS.neon.palette;
