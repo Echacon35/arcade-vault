@@ -67,6 +67,7 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 - **Registro:** `games/registry.ts` → `GAME_ENGINES`, indexado por el `id` del catálogo. Cada motor vive en `games/<id>/` (`engine.ts`, `constants.ts` y módulos propios). Utilidades compartidas en `games/shared/` (p. ej. `isTypingTarget` para no capturar teclas mientras se escribe el nombre).
 - **Canvas:** siempre 800×600 (`components/game-canvas.tsx`); el HUD de React solo muestra puntuación, vidas y nivel. Todo lo demás se dibuja dentro del canvas.
 - **Assets y sonido** (extensiones E2/E3, aplicadas por REBOTE): en `public/games/<id>/…`, cargados con `new Image()` / `new Audio()` dentro de la factory, nunca al importar el módulo.
+- **Skins (E4, aplicada):** cada juego define las suyas en `games/<id>/skins.ts` (mínimo `neon`, `retro`, `clasico`, `pastel`) y se registra en `GAME_SKINS`; las aplica el agente `skin-designer` (registro en `references/games-with-themes.md`).
 - **E1 (vidas opcionales) no está aplicada:** `GameStats.lives` sigue siendo `number`; TETRA emite `1`/`0` en lugar de `null`.
 - **Doble registro del juego:** además de `GAME_ENGINES` y la fila en Supabase, cada juego va en `GAMES` de `lib/games.ts` (lo usan la landing y `generateStaticParams` de `/juegos/[id]/jugar`) y su portada `.cover-<id>` en `app/globals.css`.
 - **juegos** ver archivo references\implemented-games.md cuando necesites revisar por los juegos implementadosy como implementar uno nuevo

@@ -1,3 +1,5 @@
+import { SKINS } from "./skins";
+
 // Constantes portadas sin cambios de references/started-games/02-asteroids/game.js.
 
 // ── Espacio lógico ────────────────────────────────────────────────────────────
@@ -56,13 +58,5 @@ export const TRIPLE_SPREAD = 0.18;
 export const PARTICLE_DEFAULT_COUNT = 8;
 
 // ── Paleta neón del Vault ─────────────────────────────────────────────────────
-export const COLORS = {
-  background: "#000",
-  ship: "#00f5ff", // cian
-  asteroid: "#e6e9ff", // tinta
-  bullet: "#f5ff00", // amarillo
-  powerUp: "#ff006e", // magenta
-  flame: "rgba(245, 255, 0, 0.85)", // amarillo
-  /** Tinta en RGB, para el desvanecido de las partículas. */
-  particleRgb: "230, 233, 255",
-} as const;
+/** Alias de la skin `neon` (la paleta original de la SPEC 05). El motor lee la skin activa. */
+export const COLORS = SKINS.neon.palette;

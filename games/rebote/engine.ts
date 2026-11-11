@@ -1,9 +1,12 @@
 import { isTypingTarget } from "../shared/input";
+import { DEFAULT_SKIN } from "../shared/skins";
 import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   GameStats,
+  SkinId,
 } from "../types";
 import {
   BALL_SIZE,
@@ -14,7 +17,6 @@ import {
   BLOCK_W,
   BLOCKS_ORIGIN_X,
   BLOCKS_ORIGIN_Y,
-  COLORS,
   H,
   LAST_LEVEL,
   MAX_DT,
@@ -28,6 +30,7 @@ import {
   W,
 } from "./constants";
 import { LEVELS } from "./levels";
+import { BLOCK_PALETTE_KEY, type Skin, SKINS } from "./skins";
 import { type Sounds, createSounds } from "./sounds";
 import {
   type BlockColor,
@@ -185,63 +188,218 @@ function update(state: State, dt: number, sounds: Sounds) {
     }
   }
 }
+/** Lienzo de baja resolución para las skins pixeladas (`pixelScale > 1`). */
+type PixelBuffer = {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  scale: number;
+};
+const isVisible = (color: string) => color !== "transparent";
 function drawMessage(
   ctx: CanvasRenderingContext2D,
   text: string,
   color: string,
+  skin: Skin,
 ) {
+  ctx.shadowBlur = 0;
   ctx.fillStyle = color;
-  ctx.font = "bold 28px monospace";
+  ctx.font = skin.messageFont;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, W / 2, H / 2);
 }
-/** `draw` de `game.js` sin el HUD ni los overlays (los pone `GamePlayer`). */
-function draw(
+/** Rectángulo (redondeado si `r > 0`) relleno y, si la skin lo pide, con contorno interior. */
+function drawBox(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  fill: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const stroke = isVisible(skin.palette.outline) && skin.lineWidth > 0;
+  // El trazo va centrado en el borde: se mete media línea para no salirse del Rect.
+  const half = stroke ? skin.lineWidth / 2 : 0;
+  ctx.beginPath();
+  if (r > 0) ctx.roundRect(x + half, y + half, w - 2 * half, h - 2 * half, r);
+  else ctx.rect(x + half, y + half, w - 2 * half, h - 2 * half);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) {
+    ctx.lineWidth = skin.lineWidth;
+    ctx.strokeStyle = skin.palette.outline;
+    ctx.stroke();
+  }
+}
+function drawBlockShape(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  color: BlockColor,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
+  const i = skin.blockInset;
+  const fill = skin.palette[BLOCK_PALETTE_KEY[color]];
+  drawBox(ctx, skin, fill, x + i, y + i, w - 2 * i, h - 2 * i, skin.radius);
+  if (isVisible(skin.palette.blockHighlight)) {
+    ctx.fillStyle = skin.palette.blockHighlight;
+    ctx.fillRect(x + i, y + i, w - 2 * i, 2);
+  }
+}
+/** Explosión vectorial: 4 frames en los que el bloque se parte en cuartos que se alejan y encogen. */
+function drawExplosionShape(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  exp: Explosion,
+  frameIndex: number,
+) {
+  const f = (frameIndex + 1) / 4;
+  const pw = (exp.w / 2) * (1 - 0.55 * f);
+  const ph = (exp.h / 2) * (1 - 0.55 * f);
+  const fill = skin.palette[BLOCK_PALETTE_KEY[exp.color]];
+  const r = Math.min(skin.radius, ph / 2);
+  for (const qx of [0, 1])
+    for (const qy of [0, 1]) {
+      const cx = exp.x + exp.w / 4 + (qx * exp.w) / 2 + (qx ? 1 : -1) * f * 10;
+      const cy = exp.y + exp.h / 4 + (qy * exp.h) / 2 + (qy ? 1 : -1) * f * 6;
+      drawBox(ctx, skin, fill, cx - pw / 2, cy - ph / 2, pw, ph, r);
+    }
+}
+function drawPaddleShape(ctx: CanvasRenderingContext2D, skin: Skin, p: Rect) {
+  const r = skin.radius > 0 ? p.h / 2 : 0;
+  drawBox(ctx, skin, skin.palette.paddle, p.x, p.y, p.w, p.h, r);
+  if (isVisible(skin.palette.paddleAccent)) {
+    ctx.fillStyle = skin.palette.paddleAccent;
+    ctx.fillRect(p.x + 4, p.y + 4, 6, p.h - 8);
+    ctx.fillRect(p.x + p.w - 10, p.y + 4, 6, p.h - 8);
+  }
+}
+function drawBallShape(ctx: CanvasRenderingContext2D, skin: Skin, b: Rect) {
+  if (skin.ballShape === "square") {
+    drawBox(ctx, skin, skin.palette.ball, b.x, b.y, b.w, b.h, 0);
+    return;
+  }
+  const stroke = isVisible(skin.palette.outline) && skin.lineWidth > 0;
+  const half = stroke ? skin.lineWidth / 2 : 0;
+  ctx.beginPath();
+  ctx.arc(b.x + b.w / 2, b.y + b.h / 2, b.w / 2 - half, 0, Math.PI * 2);
+  ctx.fillStyle = skin.palette.ball;
+  ctx.fill();
+  if (stroke) {
+    ctx.lineWidth = skin.lineWidth;
+    ctx.strokeStyle = skin.palette.outline;
+    ctx.stroke();
+  }
+}
+/** Fondo y piezas: es lo que se pixela en RETRO. NEÓN usa el spritesheet; el resto, formas vectoriales. */
+function drawWorld(
   ctx: CanvasRenderingContext2D,
   state: State,
   img: HTMLImageElement,
+  skin: Skin,
 ) {
-  ctx.fillStyle = COLORS.bg;
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = skin.palette.background;
   ctx.fillRect(0, 0, W, H);
-  if (state.phase === "loading") {
-    drawMessage(ctx, "CARGANDO…", COLORS.loading);
-    return;
-  }
-  if (state.phase === "error") {
-    drawMessage(ctx, "▸ SEÑAL PERDIDA — REINTENTA_", COLORS.error);
-    return;
-  }
   for (const b of state.blocks) {
-    if (b.alive)
+    if (!b.alive) continue;
+    if (skin.sprites)
       drawFrame(ctx, img, SPRITES.blocks[b.color], b.x, b.y, b.w, b.h);
+    else drawBlockShape(ctx, skin, b.color, b.x, b.y, b.w, b.h);
   }
   for (const exp of state.explosions) {
     const frameIndex = Math.min(
       Math.floor((exp.elapsed / EXPLOSION_DURATION) * 4),
       3,
     );
-    drawFrame(
-      ctx,
-      img,
-      EXPLOSION_FRAMES[exp.color][frameIndex],
-      exp.x,
-      exp.y,
-      exp.w,
-      exp.h,
-    );
+    if (skin.sprites)
+      drawFrame(
+        ctx,
+        img,
+        EXPLOSION_FRAMES[exp.color][frameIndex],
+        exp.x,
+        exp.y,
+        exp.w,
+        exp.h,
+      );
+    else drawExplosionShape(ctx, skin, exp, frameIndex);
   }
   const { paddle, ball } = state;
-  drawFrame(ctx, img, SPRITES.paddle, paddle.x, paddle.y, paddle.w, paddle.h);
-  drawFrame(ctx, img, SPRITES.ball, ball.x, ball.y, ball.w, ball.h);
+  // Brillo solo en las piezas que se mueven (NEÓN).
+  ctx.shadowBlur = skin.glow;
+  ctx.shadowColor = skin.glow > 0 ? skin.palette.glow : "transparent";
+  if (skin.sprites) {
+    drawFrame(ctx, img, SPRITES.paddle, paddle.x, paddle.y, paddle.w, paddle.h);
+    drawFrame(ctx, img, SPRITES.ball, ball.x, ball.y, ball.w, ball.h);
+  } else {
+    drawPaddleShape(ctx, skin, paddle);
+    drawBallShape(ctx, skin, ball);
+  }
+  ctx.shadowBlur = 0;
+}
+/** `draw` de `game.js` sin el HUD ni los overlays (los pone `GamePlayer`). */
+function draw(
+  ctx: CanvasRenderingContext2D,
+  state: State,
+  img: HTMLImageElement,
+  skin: Skin,
+  buffer: PixelBuffer | null,
+) {
+  if (state.phase === "loading" || state.phase === "error") {
+    // Mensajes siempre a resolución completa para que se lean en todas las skins.
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = skin.palette.background;
+    ctx.fillRect(0, 0, W, H);
+    if (state.phase === "loading")
+      drawMessage(ctx, "CARGANDO…", skin.palette.loading, skin);
+    else
+      drawMessage(
+        ctx,
+        "▸ SEÑAL PERDIDA — REINTENTA_",
+        skin.palette.error,
+        skin,
+      );
+    return;
+  }
+  if (buffer) {
+    buffer.ctx.setTransform(1 / buffer.scale, 0, 0, 1 / buffer.scale, 0, 0);
+    drawWorld(buffer.ctx, state, img, skin);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(buffer.canvas, 0, 0, W, H);
+  } else {
+    // Valor por defecto del canvas: los sprites de NEÓN se escalan como en el original.
+    ctx.imageSmoothingEnabled = true;
+    drawWorld(ctx, state, img, skin);
+  }
 }
 export const createReboteGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const maybeCtx = canvas.getContext("2d");
   if (!maybeCtx) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = maybeCtx;
+  let skin = SKINS[options?.skin ?? DEFAULT_SKIN];
+  // Se crea bajo demanda (nunca al importar el módulo) y se reutiliza entre cambios de skin.
+  let pixelCanvas: HTMLCanvasElement | null = null;
+  const pixelBuffer = (): PixelBuffer | null => {
+    if (skin.pixelScale <= 1) return null;
+    pixelCanvas ??= document.createElement("canvas");
+    const w = Math.ceil(W / skin.pixelScale);
+    const h = Math.ceil(H / skin.pixelScale);
+    if (pixelCanvas.width !== w) pixelCanvas.width = w;
+    if (pixelCanvas.height !== h) pixelCanvas.height = h;
+    const pctx = pixelCanvas.getContext("2d");
+    return pctx
+      ? { canvas: pixelCanvas, ctx: pctx, scale: skin.pixelScale }
+      : null;
+  };
+  let buffer = pixelBuffer();
   const sounds = createSounds();
   const img = new Image();
   let imgReady = false;
@@ -251,6 +409,7 @@ export const createReboteGame: GameFactory = (
   let lastStats: GameStats | null = null;
   let gameOverNotified = false;
   let destroyed = false;
+  const render = () => draw(ctx, state, img, skin, buffer);
   const emitStats = () => {
     const { score, lives, level } = state;
     if (
@@ -291,7 +450,7 @@ export const createReboteGame: GameFactory = (
     const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, MAX_DT);
     lastTime = ts;
     update(state, dt, sounds);
-    draw(ctx, state, img);
+    render();
     sync();
     if (state.phase !== "playing") return;
     rafId = requestAnimationFrame(loop);
@@ -338,20 +497,20 @@ export const createReboteGame: GameFactory = (
     if (destroyed) return;
     imgReady = true;
     if (state.phase === "loading") state.phase = "playing";
-    draw(ctx, state, img);
+    render();
     start();
   };
   img.onerror = () => {
     if (destroyed) return;
     state.phase = "error";
     stop();
-    draw(ctx, state, img);
+    render();
   };
   img.src = SPRITESHEET_SRC;
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   canvas.addEventListener("mousemove", onMouseMove);
-  draw(ctx, state, img);
+  render();
   emitStats();
   return {
     pause() {
@@ -375,9 +534,16 @@ export const createReboteGame: GameFactory = (
       state = createState(phase);
       lastStats = null;
       gameOverNotified = false;
-      draw(ctx, state, img);
+      render();
       emitStats();
       start();
+    },
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id];
+      buffer = pixelBuffer();
+      // Con el bucle parado (carga, error, pausa o fin) se redibuja ya; en juego lo hace el siguiente frame.
+      if (rafId === null) render();
     },
     destroy() {
       if (destroyed) return;
@@ -389,6 +555,8 @@ export const createReboteGame: GameFactory = (
       img.onload = null;
       img.onerror = null;
       sounds.dispose();
+      pixelCanvas = null;
+      buffer = null;
     },
   };
 };
