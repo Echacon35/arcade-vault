@@ -1,6 +1,6 @@
 # SPEC 11 — Apariencia del pad táctil como el Gamepad MK-II
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 10
 > **Fecha:** 2026-11-11
 > **Objetivo:** Rediseñar el pad táctil de `/jugar` para que se vea igual que el Gamepad MK-II de `references/gamepad-assets/`, sin cambiar qué teclas emite ni cuándo aparece.
@@ -146,19 +146,19 @@ No hay persistencia ni cambios en Supabase.
 
 ## Criterios de aceptación
 
-- [ ] `npm run build` y `npm run lint` terminan sin errores.
-- [ ] Con emulación táctil, en los cuatro juegos el pad se ve como `references/gamepad-assets/gamepad-neon.png`: carcasa con borde neón y trama, cruz de 4 teclas con flechas SVG y gema cian en el centro, y botones redondos B cian y A magenta con su letra.
-- [ ] La cruz se dibuja completa en los cuatro juegos. Las direcciones no usadas (`▲` `▼` en ASTEROIDES y REBOTE, `▲` en TETRA) se ven atenuadas y tocarlas no emite ninguna tecla.
-- [ ] ASTEROIDES muestra B = propulsar y A = fuego, con la leyenda `B PROPULSAR · A FUEGO`. TETRA muestra B = rotar y A = caída, con la leyenda `B ROTAR · A CAÍDA`. REBOTE y VIBORITA no muestran botones A/B ni leyenda.
-- [ ] Un `TouchLayout` con tres acciones no compila.
-- [ ] Al pulsar, cada tecla o botón muestra el estado pulsado de la referencia (hundido + resplandor; anillo discontinuo en A/B) y vuelve al soltar.
-- [ ] En vertical (412×915), la carcasa completa queda bajo el canvas y canvas y pad se ven a la vez.
-- [ ] En horizontal (915×412), hay dos medias carcasas a los lados del CRT (solo la izquierda en REBOTE y VIBORITA) y canvas y pad se ven a la vez sin scroll una vez que el CRT está en pantalla.
-- [ ] A 360×740 no hay scroll horizontal y todas las teclas y botones se pueden tocar.
-- [ ] Con `prefers-reduced-motion: reduce` la gema no se anima. En pausa el pad se ve atenuado y la gema no pulsa.
-- [ ] Siguen cumpliéndose los criterios de comportamiento de SPEC 10: multitáctil (mantener `◀` + tocar A en ASTEROIDES), autorrepetición en TETRA, ninguna tecla pegada al pausar, sin foco ni menú contextual en los botones, y ningún cambio en escritorio.
-- [ ] `.claude/agents/mobile-porter.md` y `references/games-with-touch.md` describen la regla de máximo 2 acciones (última = A) y la leyenda.
-- [ ] La consola no muestra errores durante las partidas en emulación táctil.
+- [x] `npm run build` y `npm run lint` terminan sin errores.
+- [x] Con emulación táctil, en los cuatro juegos el pad se ve como `references/gamepad-assets/gamepad-neon.png`: carcasa con borde neón y trama, cruz de 4 teclas con flechas SVG y gema cian en el centro, y botones redondos B cian y A magenta con su letra.
+- [x] La cruz se dibuja completa en los cuatro juegos. Las direcciones no usadas (`▲` `▼` en ASTEROIDES y REBOTE, `▲` en TETRA) se ven atenuadas y tocarlas no emite ninguna tecla.
+- [x] ASTEROIDES muestra B = propulsar y A = fuego, con la leyenda `B PROPULSAR · A FUEGO`. TETRA muestra B = rotar y A = caída, con la leyenda `B ROTAR · A CAÍDA`. REBOTE y VIBORITA no muestran botones A/B ni leyenda.
+- [x] Un `TouchLayout` con tres acciones no compila.
+- [x] Al pulsar, cada tecla o botón muestra el estado pulsado de la referencia (hundido + resplandor; anillo discontinuo en A/B) y vuelve al soltar.
+- [x] En vertical (412×915), la carcasa completa queda bajo el canvas y canvas y pad se ven a la vez.
+- [x] En horizontal (915×412), hay dos medias carcasas a los lados del CRT (solo la izquierda en REBOTE y VIBORITA) y canvas y pad se ven a la vez sin scroll una vez que el CRT está en pantalla.
+- [x] A 360×740 no hay scroll horizontal y todas las teclas y botones se pueden tocar.
+- [x] Con `prefers-reduced-motion: reduce` la gema no se anima. En pausa el pad se ve atenuado y la gema no pulsa.
+- [x] Siguen cumpliéndose los criterios de comportamiento de SPEC 10: multitáctil (mantener `◀` + tocar A en ASTEROIDES), autorrepetición en TETRA, ninguna tecla pegada al pausar, sin foco ni menú contextual en los botones, y ningún cambio en escritorio.
+- [x] `.claude/agents/mobile-porter.md` y `references/games-with-touch.md` describen la regla de máximo 2 acciones (última = A) y la leyenda.
+- [x] La consola no muestra errores durante las partidas en emulación táctil.
 
 ---
 
