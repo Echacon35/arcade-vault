@@ -1,21 +1,32 @@
 "use client";
-
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { saveScoreAction } from "@/app/juegos/[id]/jugar/actions";
 import { GameCanvas, type GameCanvasHandle } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
-import { GAME_ENGINES, GAME_SKINS } from "@/games/registry";
+import { TouchPad } from "@/components/touch-pad";
+import { GAME_ENGINES, GAME_SKINS, GAME_TOUCH } from "@/games/registry";
 import { DEFAULT_SKIN, SKIN_LABELS, SKIN_SWATCHES } from "@/games/shared/skins";
 import type { GameStats, SkinId } from "@/games/types";
 import type { Game } from "@/lib/games";
 import { saveScore } from "@/lib/session";
-
 const LIVES = 3;
 const LEVEL_STEP = 2500;
-
 type SaveState = "idle" | "saving" | "saved" | "error";
-
+/** SPEC 10: puntero grueso (móvil/tablet). En el servidor y al hidratar vale `false`. */
+const COARSE_QUERY = "(pointer: coarse)";
+function subscribeCoarse(onChange: () => void) {
+  const mql = window.matchMedia(COARSE_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+function useCoarsePointer() {
+  return useSyncExternalStore(
+    subscribeCoarse,
+    () => window.matchMedia(COARSE_QUERY).matches,
+    () => false,
+  );
+}
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { user } = useSession();
@@ -24,6 +35,9 @@ export function GamePlayer({ game }: { game: Game }) {
   // E4: skins del motor; sin entrada en GAME_SKINS no hay selector.
   const skins = engine ? GAME_SKINS[game.id] : undefined;
   const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
+  // SPEC 10: pad táctil solo con motor, distribución y puntero grueso.
+  const coarse = useCoarsePointer();
+  const touchLayout = engine && coarse ? GAME_TOUCH[game.id] : undefined;
   const canvasRef = useRef<GameCanvasHandle>(null);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(LIVES);
@@ -37,10 +51,8 @@ export function GamePlayer({ game }: { game: Game }) {
   // en cuanto se hidrata desde localStorage.
   const [nameInput, setNameInput] = useState<string | null>(null);
   const name = nameInput ?? user?.name ?? "INVITADO";
-
   // Con motor, el nivel lo dicta el juego. En la simulación sube cada 2.500 puntos.
   const level = engine ? engineLevel : 1 + Math.floor(score / LEVEL_STEP);
-
   // Partida simulada: solo para juegos sin motor.
   useEffect(() => {
     if (engine || over || paused) return;
@@ -50,7 +62,6 @@ export function GamePlayer({ game }: { game: Game }) {
     );
     return () => clearInterval(t);
   }, [engine, over, paused]);
-
   // Pausa automática al ocultar la pestaña, para que el dt acumulado no mate al jugador.
   useEffect(() => {
     if (!engine) return;
@@ -60,29 +71,24 @@ export function GamePlayer({ game }: { game: Game }) {
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [engine]);
-
   const handleStats = (stats: GameStats) => {
     setScore(stats.score);
     setLives(stats.lives);
     setEngineLevel(stats.level);
   };
-
   const handleGameOver = (finalScore: number) => {
     setScore(finalScore);
     setAbandoned(false);
     setOver(true);
   };
-
   // P / Esc desde el motor. Con el modal abierto no hay nada que pausar.
   const togglePause = () => {
     if (!over) setPaused((p) => !p);
   };
-
   const finish = () => {
     if (engine) setAbandoned(true);
     setOver(true);
   };
-
   const restart = () => {
     setScore(0);
     setLives(LIVES);
@@ -93,7 +99,6 @@ export function GamePlayer({ game }: { game: Game }) {
     setAbandoned(false);
     canvasRef.current?.restart();
   };
-
   const save = async () => {
     // Juegos simulados: siguen en localStorage (la FK de `scores` los rechazaría).
     if (!engine) {
@@ -101,7 +106,6 @@ export function GamePlayer({ game }: { game: Game }) {
       setSaveState("saved");
       return;
     }
-
     // Juegos con motor: Supabase vía Server Action.
     setSaveState("saving");
     try {
@@ -111,13 +115,11 @@ export function GamePlayer({ game }: { game: Game }) {
       setSaveState("error");
     }
   };
-
   const saving = saveState === "saving";
-
   return (
     <div className="av-player fade-in">
       <div className="player-hud">
-        <div className="flex flex-wrap gap-6">
+        <div className="hud-stats">
           <div className="hud-stat">
             <div className="l">Jugador</div>
             <div className="v text-ink">{name}</div>
@@ -139,7 +141,7 @@ export function GamePlayer({ game }: { game: Game }) {
           <div
             role="group"
             aria-label="Skin del juego"
-            className="flex items-stretch border border-line bg-bg"
+            className="hud-skins flex items-stretch border border-line bg-bg"
           >
             <span className="flex items-center px-3 font-mono text-[10px] tracking-[0.14em] text-ink-faint">
               SKIN
@@ -189,53 +191,58 @@ export function GamePlayer({ game }: { game: Game }) {
           </button>
         </div>
       </div>
-
-      <div className="crt">
-        <div className="crt-screen">
-          {engine ? (
-            <GameCanvas
-              ref={canvasRef}
-              factory={engine}
-              title={game.title}
-              paused={paused}
-              over={over}
-              skin={skin}
-              onStats={handleStats}
-              onGameOver={handleGameOver}
-              onPauseToggle={togglePause}
-            />
-          ) : (
-            <div className="game-arena">
-              <div className="grid-floor"></div>
-              <div className="enemy e1"></div>
-              <div className="enemy e2"></div>
-              <div className="enemy e3"></div>
-              <div className="player-ship"></div>
-            </div>
-          )}
-          {paused && (
-            // PASTEL es la única skin de fondo claro: el velo se oscurece para que el texto se lea.
-            <div
-              className={`crt-content z-[5] ${skin === "pastel" ? "bg-black/80" : "bg-black/60"}`}
-            >
-              <div>
-                <div className="pixel neon-yellow text-[22px]">EN PAUSA</div>
-                <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">
-                  {engine
-                    ? "PULSA REANUDAR O P PARA CONTINUAR"
-                    : "PULSA REANUDAR PARA CONTINUAR"}
+      <div className="player-stage" data-touch={touchLayout ? "" : undefined}>
+        <div className="crt">
+          <div className="crt-screen">
+            {engine ? (
+              <GameCanvas
+                ref={canvasRef}
+                factory={engine}
+                title={game.title}
+                paused={paused}
+                over={over}
+                skin={skin}
+                swipe={touchLayout?.swipe}
+                onStats={handleStats}
+                onGameOver={handleGameOver}
+                onPauseToggle={togglePause}
+              />
+            ) : (
+              <div className="game-arena">
+                <div className="grid-floor"></div>
+                <div className="enemy e1"></div>
+                <div className="enemy e2"></div>
+                <div className="enemy e3"></div>
+                <div className="player-ship"></div>
+              </div>
+            )}
+            {paused && (
+              // PASTEL es la única skin de fondo claro: el velo se oscurece para que el texto se lea.
+              <div
+                className={`crt-content z-[5] ${skin === "pastel" ? "bg-black/80" : "bg-black/60"}`}
+              >
+                <div>
+                  <div className="pixel neon-yellow text-[22px]">EN PAUSA</div>
+                  <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">
+                    {engine
+                      ? "PULSA REANUDAR O P PARA CONTINUAR"
+                      : "PULSA REANUDAR PARA CONTINUAR"}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          <div className="crt-bottom">
+            <span className="led">SEÑAL OK</span>
+            <span>{game.title} · CRT-83 · 60 HZ</span>
+            <span>CARGA · 1MB</span>
+          </div>
         </div>
-        <div className="crt-bottom">
-          <span className="led">SEÑAL OK</span>
-          <span>{game.title} · CRT-83 · 60 HZ</span>
-          <span>CARGA · 1MB</span>
-        </div>
+        {touchLayout && (
+          // Ocultar la pestaña ya pausa, así que `active` también cubre `visibilitychange`.
+          <TouchPad layout={touchLayout} active={!paused && !over} />
+        )}
       </div>
-
       {over && (
         <div className="modal-bd">
           <div className="modal">

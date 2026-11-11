@@ -485,7 +485,8 @@ export const createReboteGame: GameFactory = (
     if (!isTypingTarget(e.target) && state.phase !== "gameover")
       e.preventDefault();
   };
-  const onMouseMove = (e: MouseEvent) => {
+  // SPEC 10: puntero (ratón, dedo o lápiz); tocar el canvas también coloca la pala.
+  const onPointerMove = (e: PointerEvent) => {
     if (state.paused || state.phase !== "playing") return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0) return;
@@ -509,7 +510,8 @@ export const createReboteGame: GameFactory = (
   img.src = SPRITESHEET_SRC;
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
-  canvas.addEventListener("mousemove", onMouseMove);
+  canvas.addEventListener("pointermove", onPointerMove);
+  canvas.addEventListener("pointerdown", onPointerMove);
   render();
   emitStats();
   return {
@@ -551,7 +553,8 @@ export const createReboteGame: GameFactory = (
       stop();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      canvas.removeEventListener("mousemove", onMouseMove);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerdown", onPointerMove);
       img.onload = null;
       img.onerror = null;
       sounds.dispose();
