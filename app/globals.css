@@ -1522,6 +1522,8 @@
       0 100%,
       0 14px
     );
+  }
+  .touch-pad > * {
     transition: opacity 160ms ease;
   }
   .touch-pad,
@@ -1532,7 +1534,8 @@
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .touch-pad:not([data-active]) {
+  /* En los bloques, no en el panel: en horizontal el panel es `display: contents`. */
+  .touch-pad:not([data-active]) > * {
     opacity: 0.45;
   }
   .tp-btn {
@@ -1646,6 +1649,41 @@
   @media (prefers-reduced-motion: reduce) {
     .tp-btn {
       transition: none;
+    }
+  }
+  /* maqueta táctil: en vertical el pad va debajo del CRT; en horizontal, a los lados */
+  .player-stage[data-touch] .crt {
+    padding: 10px;
+  }
+  .player-stage[data-touch] .crt-bottom {
+    margin-top: 8px;
+  }
+  @media (orientation: landscape) {
+    .player-stage[data-touch] {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+    }
+    .player-stage[data-touch] .touch-pad {
+      display: contents;
+    }
+    .player-stage[data-touch] .tp-dpad {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .player-stage[data-touch] .crt {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: center;
+      /* Canvas y pad caben a la vez: pantalla 4:3 con alto = 100dvh − marco (≈70 px). */
+      width: calc((100dvh - 70px) * 4 / 3 + 20px);
+      max-width: 100%;
+    }
+    .player-stage[data-touch] .tp-actions {
+      grid-column: 3;
+      grid-row: 1;
+      flex-direction: column;
     }
   }
   /* fake in-screen game */
