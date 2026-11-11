@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Proyecto
 
-Arcade Vault: plataforma para jugar juegos online y competir por la mayor cantidad de puntos. El catálogo y el leaderboard viven en Supabase; las puntuaciones se guardan con nombre libre (sin cuentas reales).
+SArcade Vault: plataforma para jugar juegos online y competir por la mayor cantidad de puntos. El catálogo y el leaderboard viven en Supabase; las puntuaciones se guardan con nombre libre (sin cuentas reales).
 
 **Juegos con motor real:** ASTEROIDES (SPEC 05), TETRA (SPEC 07), REBOTE (SPEC 08) y VIBORITA (SPEC 09). El resto de entradas de `lib/games.ts` (`bloque-buster`, `caida`, `serpentina`, …) no tienen motor y usan la partida simulada de `GamePlayer`.
 
@@ -69,6 +69,7 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 - **Assets y sonido** (extensiones E2/E3, aplicadas por REBOTE): en `public/games/<id>/…`, cargados con `new Image()` / `new Audio()` dentro de la factory, nunca al importar el módulo.
 - **E1 (vidas opcionales) no está aplicada:** `GameStats.lives` sigue siendo `number`; TETRA emite `1`/`0` en lugar de `null`.
 - **Doble registro del juego:** además de `GAME_ENGINES` y la fila en Supabase, cada juego va en `GAMES` de `lib/games.ts` (lo usan la landing y `generateStaticParams` de `/juegos/[id]/jugar`) y su portada `.cover-<id>` en `app/globals.css`.
+- **juegos** ver archivo references\implemented-games.md cuando necesites revisar por los juegos implementadosy como implementar uno nuevo
 
 ## Skills
 
