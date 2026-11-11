@@ -1,6 +1,6 @@
 # SPEC 07 — Juego real de tetra
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 05, SPEC 06, SPEC 06.5
 > **Fecha:** 2026-11-10
 > **Objetivo:** Portar a TypeScript el juego de `references/started-games/03-tetris` y hacerlo jugable en `/juegos/tetra/jugar` como TETRA, con su fila en la tabla `games` de Supabase, su TOP 10 y su pestaña en el Salón de la Fama.

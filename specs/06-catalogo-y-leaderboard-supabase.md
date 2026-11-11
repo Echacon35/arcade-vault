@@ -1,6 +1,6 @@
 # SPEC 06 — Catálogo y leaderboard en Supabase
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 04, SPEC 05
 > **Fecha:** 2026-11-09
 > **Objetivo:** Crear en Supabase las tablas `games` y `scores` con su leaderboard, hacer que `/juegos` y el detalle de cada juego lean de ellas, y que `GUARDAR PUNTUACIÓN` de ASTEROIDES escriba ahí a través de una Server Action.

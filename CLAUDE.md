@@ -6,9 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Proyecto
 
-Arcade Vault: plataforma para jugar juegos online y competir por la mayor cantidad de puntos. Actualmente es el scaffold de `create-next-app`; aún no hay juegos, backend ni base de datos.
+Arcade Vault: plataforma para jugar juegos online y competir por la mayor cantidad de puntos. El catálogo y el leaderboard viven en Supabase; las puntuaciones se guardan con nombre libre (sin cuentas reales).
 
-El desarrollo sigue **Spec Driven Design** con las skills `/spec` y `/spec-impl` de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Ante una feature nueva, se espera escribir primero la spec y luego implementarla a partir de ella.
+**Juegos con motor real:** ASTEROIDES (SPEC 05), TETRA (SPEC 07), REBOTE (SPEC 08) y VIBORITA (SPEC 09). El resto de entradas de `lib/games.ts` (`bloque-buster`, `caida`, `serpentina`, …) no tienen motor y usan la partida simulada de `GamePlayer`.
+
+**Rutas (`app/`):**
+
+- `/` — landing (datos estáticos de `lib/home.ts`).
+- `/juegos` — biblioteca, leída de Supabase.
+- `/juegos/[id]` — detalle del juego con TOP 10.
+- `/juegos/[id]/jugar` — partida (`GamePlayer` + `GameCanvas`) y guardado de puntuación (`actions.ts`).
+- `/salon` — Salón de la Fama, leído de Supabase.
+- `/acerca-de` — información y formulario de contacto vía Resend (`actions.ts`).
+- `/acceso` — login/registro simulado: la "sesión" es un nombre en `localStorage` (`lib/session.ts`, `components/session-provider.tsx`); no hay auth real.
+
+El desarrollo sigue **Spec Driven Design**: ante una feature nueva se escribe primero la spec en `specs/NN-<slug>.md` (con `/spec`) y luego se implementa a partir de ella (con `/spec-impl`, que crea la rama `spec-NN-<slug>` según `specs/.spec-config.yml`). Las specs llevan un campo `Estado` (Borrador → Aprobado → Implementado) y una sección "Problemas conocidos" cuando aplica.
 
 ## Comandos
 
@@ -20,7 +32,7 @@ El desarrollo sigue **Spec Driven Design** con las skills `/spec` y `/spec-impl`
 
 Hook de Claude Code (`.claude/settings.json` → `.claude/hooks/format-and-lint.mjs`): tras cada Write/Edit, pasa el archivo por Prettier, luego (si es JS/TS) por `eslint --fix` con `no-multiple-empty-lines` en `max: 0` para borrar las líneas en blanco (respeta los template literals), y de nuevo por Prettier. En CSS/JSON borra las líneas en blanco por texto; Markdown solo pasa por Prettier. Es silencioso: los errores de lint que no se puedan corregir automáticamente no bloquean.
 
-No hay framework de tests configurado todavía.
+No hay framework de tests configurado todavía. La verificación visual se hace con el MCP de Playwright.
 
 ## Variables de entorno
 
@@ -43,16 +55,30 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 
 ## Supabase
 
-- **Esquema:** tablas `games` y `scores`, vistas `leaderboard` y `game_stats`, con RLS (lectura pública, insert anónimo en `scores`, sin update/delete).
-- **Migraciones:** se aplican con `apply_migration` del MCP de Supabase (no se usa la Supabase CLI). Cada migración aplicada tiene su `.sql` idéntico en `supabase/migrations/`, con el nombre `<version>_<nombre>.sql` y la misma versión que devuelve `list_migrations`. Es el historial versionado del esquema.
+- **Proyecto:** el MCP de Supabase está configurado en `.mcp.json` (proyecto cloud, sin stack local).
+- **Esquema:** tablas `games` y `scores`, vistas `leaderboard` y `game_stats`, con RLS (lectura pública, insert anónimo en `scores`, sin update/delete). `scores` tiene CHECK de nombre `^[A-Z0-9_]{1,10}$` y puntuación entera entre 0 y 10.000.000.
+- **Migraciones:** se aplican con `apply_migration` del MCP de Supabase (no se usa la Supabase CLI). Cada migración aplicada tiene su `.sql` idéntico en `supabase/migrations/`, con el nombre `<version>_<nombre>.sql` y la misma versión que devuelve `list_migrations`. Es el historial versionado del esquema. Cada juego nuevo añade su fila a `games` con una migración `add_game_<id>`.
 - **Tipos:** `lib/supabase/database.types.ts` se genera con `generate_typescript_types` del MCP; regenéralo tras cada migración, no lo edites a mano.
-- **Acceso:** solo `lib/catalog.ts` (lecturas cacheadas con `"use cache"` + `cacheTag`, cliente público sin cookies) y las Server Actions (p. ej. `app/juegos/[id]/jugar/actions.ts`, que invalida con `updateTag`) hablan con Supabase. Los componentes no importan `@supabase/*` ni `lib/supabase/*`.
+- **Acceso:** solo `lib/catalog.ts` (`getCatalog`, `getCatalogGame`, `getLeaderboard`: lecturas cacheadas con `"use cache"` + `cacheTag("games")` / `cacheTag("game-<id>")`, cliente público sin cookies) y las Server Actions (`app/juegos/[id]/jugar/actions.ts` → `saveScoreAction`, que invalida con `updateTag`) hablan con Supabase. Los componentes no importan `@supabase/*` ni `lib/supabase/*`. Un error de Supabase se devuelve como `{ ok: false }` y la UI muestra `SignalLost`.
+
+## Juegos
+
+- **Contrato de motor** (`games/types.ts`): `GameFactory(canvas, callbacks) → GameInstance` con `pause/resume/restart/destroy`; callbacks `onStats({ score, lives, level })` (solo cuando cambia), `onGameOver(finalScore)` y `onPauseToggle()`. El detalle y las extensiones permitidas están en `.claude/skills/add-game/contract.md`.
+- **Registro:** `games/registry.ts` → `GAME_ENGINES`, indexado por el `id` del catálogo. Cada motor vive en `games/<id>/` (`engine.ts`, `constants.ts` y módulos propios). Utilidades compartidas en `games/shared/` (p. ej. `isTypingTarget` para no capturar teclas mientras se escribe el nombre).
+- **Canvas:** siempre 800×600 (`components/game-canvas.tsx`); el HUD de React solo muestra puntuación, vidas y nivel. Todo lo demás se dibuja dentro del canvas.
+- **Assets y sonido** (extensiones E2/E3, aplicadas por REBOTE): en `public/games/<id>/…`, cargados con `new Image()` / `new Audio()` dentro de la factory, nunca al importar el módulo.
+- **E1 (vidas opcionales) no está aplicada:** `GameStats.lives` sigue siendo `number`; TETRA emite `1`/`0` en lugar de `null`.
+- **Doble registro del juego:** además de `GAME_ENGINES` y la fila en Supabase, cada juego va en `GAMES` de `lib/games.ts` (lo usan la landing y `generateStaticParams` de `/juegos/[id]/jugar`) y su portada `.cover-<id>` en `app/globals.css`.
 
 ## Skills
 
-Usa siempre /frontend-design para diseñar interfaz de usuario.
+- `/spec` y `/spec-impl` — de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Instaladas en `.claude/skills/` y `.agents/skills/`, versionadas en `skills-lock.json`.
+- `/add-game <juego>` (`.claude/skills/add-game/`) — para integrar un juego de `references/started-games/`. Especialización de `/spec`: analiza el código original y escribe su spec en Borrador con la receta de integración (motor en `games/<id>/`, `GAME_ENGINES`, `GAMES`, portada, fila en la tabla `games` de Supabase, TOP 10 y Salón). No escribe código; después se implementa con `/spec-impl`. Archivos de apoyo: `recipe.md` (receta y trampas conocidas), `contract.md` (contrato de motor y extensiones E1–E3) y `game-spec-template.md`.
+- `/frontend-design` — úsala siempre para diseñar interfaz de usuario. Las maquetas de referencia de la UI están en `references/Templates/`.
 
-Para integrar un juego de `references/started-games/`, usa `/add-game <juego>` (`.claude/skills/add-game/`). Analiza el código original y escribe su spec en Borrador con la receta de integración (motor en `games/<id>/`, `GAME_ENGINES`, `GAMES`, portada, fila en la tabla `games` de Supabase, TOP 10 y Salón). Después se implementa con `/spec-impl`. El contrato de motor y sus extensiones permitidas están en `.claude/skills/add-game/contract.md`.
+## Problemas conocidos
+
+- **Catálogo desactualizado tras añadir un juego** (SPEC 07): Next reutiliza entre builds las respuestas de `fetch` de Supabase guardadas en `.next/cache/fetch-cache` sin tags, así que `/juegos` puede salir sin el juego nuevo. Antes del build que sigue a una migración de datos, borra `.next/cache/fetch-cache/` (y `.next/server/route-cache` si existe) y comprueba que `.next/server/app/juegos.html` contiene el juego nuevo.
 
 ## Stack y particularidades
 
@@ -63,3 +89,4 @@ Para integrar un juego de `references/started-games/`, usa `/add-game <juego>` (
 - **Tailwind CSS v4** cargado vía el loader `@tailwindcss/turbopack` (regla `*.css` en `turbopack.rules`), no vía PostCSS. Los tokens de tema se definen en `app/globals.css` con `@theme inline`; no existe `tailwind.config.*`.
 - Los tipos de props de rutas son globales y generados (p. ej. `LayoutProps<"/">` en `app/layout.tsx`); no se importan.
 - Alias de imports: `@/*` → raíz del repo.
+- Dependencias de servidor: `resend`, `@supabase/ssr`, `@supabase/supabase-js` y `server-only` (lo importa `lib/catalog.ts`).
