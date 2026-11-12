@@ -12,13 +12,16 @@ import {
   BOARD_Y,
   CELL,
   COLORS,
+  FROG_HITBOX_INSET,
   COLS,
   GOAL_COLS,
   GOAL_WIDTH,
   H,
   JUMP_MS,
   MAX_DT,
+  POINTS_GOAL,
   POINTS_STEP,
+  POINTS_TIME_PER_SEC,
   ROW_GOALS,
   ROW_RIVER_BOT,
   ROW_RIVER_TOP,
@@ -130,15 +133,110 @@ function startJump(state: State, dir: Direction) {
   frog.targetCol = col;
   frog.targetRow = row;
 }
+/** Caja horizontal de la rana en celdas, algo más estrecha que su celda. */
+function frogSpan(frog: Frog): [number, number] {
+  return [frog.col + FROG_HITBOX_INSET, frog.col + 1 - FROG_HITBOX_INSET];
+}
+/** ¿Algún vehículo del carril de la rana la solapa? */
+function checkRoadCollision(frog: Frog, lanes: Lane[]): boolean {
+  if (!isRoadRow(frog.row)) return false;
+  const [left, right] = frogSpan(frog);
+  return lanes.some(
+    (lane) =>
+      lane.row === frog.row &&
+      lane.entities.some((e) => left < e.col + e.width && right > e.col),
+  );
+}
+/** Tronco o grupo de tortugas visible bajo el centro de la rana, o `null` (agua). */
+function getSupport(
+  frog: Frog,
+  lanes: Lane[],
+): { lane: Lane; entity: Entity } | null {
+  const center = frog.col + 0.5;
+  for (const lane of lanes) {
+    if (lane.row !== frog.row) continue;
+    for (const entity of lane.entities) {
+      if (center < entity.col || center >= entity.col + entity.width) continue;
+      // Una tortuga sumergida no sostiene a nadie.
+      if (entity.type === "turtle" && entity.submerged) return null;
+      return { lane, entity };
+    }
+  }
+  return null;
+}
+/**
+ * Índice de la boca libre en la que cae la rana, o `null` si cae en el muro o
+ * en una boca ya ocupada (muerte).
+ */
+function checkGoal(frog: Frog, goals: boolean[]): number | null {
+  if (frog.row !== ROW_GOALS) return null;
+  const col = Math.round(frog.col);
+  const index = GOAL_COLS.findIndex((c) => col >= c && col < c + GOAL_WIDTH);
+  if (index < 0 || goals[index]) return null;
+  return index;
+}
+/** Vuelve a empezar el cruce: rana en la salida, tiempo lleno y récord de fila reiniciado. */
+function resetCrossing(state: State) {
+  state.frog = startFrog();
+  state.pendingDir = null;
+  state.timeTotal = timerFor(state.level);
+  state.timeLeft = state.timeTotal;
+  state.bestRow = ROW_START;
+}
+/** Muerte de la rana (paso 7: vidas y fin de partida). */
+function killFrog(state: State) {
+  resetCrossing(state);
+}
+/** Ronda completada (paso 6: siguiente nivel). */
+function completeRound(state: State) {
+  resetCrossing(state);
+}
+/** Ocupa la boca `index`: +50, bonus de tiempo y, si era la quinta, fin de ronda. */
+function reachGoal(state: State, index: number) {
+  state.goals[index] = true;
+  state.score += POINTS_GOAL + Math.floor(state.timeLeft) * POINTS_TIME_PER_SEC;
+  if (state.goals.every(Boolean)) completeRound(state);
+  else resetCrossing(state);
+}
 /** Resuelve la celda en la que acaba de caer la rana (puntos, meta y muerte). */
 function resolveLanding(state: State) {
   const { frog } = state;
   // Fuera del río la rana vuelve a la rejilla.
   if (!isRiverRow(frog.row)) frog.col = Math.round(frog.col);
+  if (frog.row === ROW_GOALS) {
+    const index = checkGoal(frog, state.goals);
+    if (index === null) {
+      killFrog(state);
+      return;
+    }
+    state.score += POINTS_STEP; // la fila de metas también es una fila nueva
+    reachGoal(state, index);
+    return;
+  }
   if (frog.row < state.bestRow) {
     state.bestRow = frog.row;
     state.score += POINTS_STEP;
   }
+}
+/** Con la rana quieta: atropello en la carretera, o arrastre / ahogo en el río. */
+function checkFrog(state: State, dt: number) {
+  const { frog } = state;
+  if (frog.animating) return;
+  if (checkRoadCollision(frog, state.lanes)) {
+    killFrog(state);
+    return;
+  }
+  if (!isRiverRow(frog.row)) return;
+  const support = getSupport(frog, state.lanes);
+  if (!support) {
+    // Cae al agua o la tortuga que la sostenía se sumerge.
+    killFrog(state);
+    return;
+  }
+  frog.col += support.lane.speed * support.lane.dir * dt;
+  frog.targetCol = frog.col;
+  // El tronco la saca por el borde del río.
+  if (frog.col < -0.5 || frog.col > COLS - 0.5) killFrog(state);
 }
 function update(state: State, dt: number) {
   if (state.phase !== "playing") return;
@@ -158,7 +256,9 @@ function update(state: State, dt: number) {
       resolveLanding(state);
     }
   }
+  checkFrog(state, dt);
   state.timeLeft = Math.max(0, state.timeLeft - dt);
+  if (state.timeLeft === 0) killFrog(state);
 }
 // ─── Dibujo ────────────────────────────────────────────────────────────────
 const cellX = (col: number) => col * CELL;
