@@ -11,6 +11,7 @@ import {
   BOARD_X,
   BOARD_Y,
   CELL,
+  DEATH_MS,
   COLORS,
   FROG_HITBOX_INSET,
   COLS,
@@ -62,6 +63,8 @@ type State = {
   timeTotal: number;
   /** Fila más alta (menor índice) alcanzada en el cruce actual, para los +10. */
   bestRow: number;
+  /** ms transcurridos desde la muerte (fase "dying"). */
+  deathT: number;
 };
 /** Teclas de dirección por `KeyboardEvent.code`: flechas y WASD. */
 const DIR_KEYS: Record<string, Direction> = {
@@ -110,6 +113,7 @@ function createState(): State {
     timeLeft: timerFor(level),
     timeTotal: timerFor(level),
     bestRow: ROW_START,
+    deathT: 0,
   };
 }
 /** Inicia un salto de 1 celda si el destino está dentro del tablero. */
@@ -184,9 +188,24 @@ function resetCrossing(state: State) {
   state.timeLeft = state.timeTotal;
   state.bestRow = ROW_START;
 }
-/** Muerte de la rana (paso 7: vidas y fin de partida). */
+/**
+ * Muerte de la rana: resta una vida. Con vidas, queda marcada `DEATH_MS` y
+ * vuelve a la salida; sin vidas, la partida termina (`sync` emite `lives = 0`
+ * y después `onGameOver(score)`).
+ */
 function killFrog(state: State) {
-  resetCrossing(state);
+  state.lives -= 1;
+  state.pendingDir = null;
+  state.frog.animating = false;
+  state.frog.targetCol = state.frog.col;
+  state.frog.targetRow = state.frog.row;
+  if (state.lives <= 0) {
+    state.lives = 0;
+    state.phase = "gameover";
+    return;
+  }
+  state.phase = "dying";
+  state.deathT = 0;
 }
 /**
  * Ronda completada (5 bocas): +200, bocas vacías, nivel siguiente con carriles
@@ -247,6 +266,16 @@ function checkFrog(state: State, dt: number) {
   if (frog.col < -0.5 || frog.col > COLS - 0.5) killFrog(state);
 }
 function update(state: State, dt: number) {
+  if (state.phase === "dying") {
+    // El tráfico sigue; la rana marcada vuelve a la salida al acabar la pausa.
+    for (const lane of state.lanes) moveLane(lane, dt);
+    state.deathT += dt * 1000;
+    if (state.deathT >= DEATH_MS) {
+      resetCrossing(state);
+      state.phase = "playing";
+    }
+    return;
+  }
   if (state.phase !== "playing") return;
   for (const lane of state.lanes) moveLane(lane, dt);
   const { frog } = state;
@@ -262,9 +291,12 @@ function update(state: State, dt: number) {
       frog.animating = false;
       frog.animT = 0;
       resolveLanding(state);
+      // Una sola muerte por frame: si el aterrizaje la mató, no se sigue comprobando.
+      if (state.phase !== "playing") return;
     }
   }
   checkFrog(state, dt);
+  if (state.phase !== "playing") return;
   state.timeLeft = Math.max(0, state.timeLeft - dt);
   if (state.timeLeft === 0) killFrog(state);
 }
@@ -544,7 +576,8 @@ function drawFrog(ctx: CanvasRenderingContext2D, state: State) {
   const t = frog.animating ? Math.min(1, frog.animT / JUMP_MS) : 0;
   const col = frog.col + (frog.targetCol - frog.col) * t;
   const row = frog.row + (frog.targetRow - frog.row) * t;
-  const color = state.phase === "dying" ? COLORS.frogDead : COLORS.frog;
+  const dead = state.phase === "dying" || state.phase === "gameover";
+  const color = dead ? COLORS.frogDead : COLORS.frog;
   drawFrogShape(
     ctx,
     cellX(col) + CELL / 2,
