@@ -1,3 +1,4 @@
+import { SKINS } from "./skins";
 /**
  * Constantes de RANARIA (spec `game-jam/frogger/01-frogger-core.md`). No hay
  * juego de referencia: estos valores son la única fuente de verdad de la mecánica.
@@ -54,37 +55,5 @@ export const TURTLE_DOWN_S = 1.5;
  * atropellan si la solapan de verdad, no por rozar el borde de la celda.
  */
 export const FROG_HITBOX_INSET = 0.2;
-/** Paleta neón del Vault para RANARIA. */
-export const COLORS = {
-  bg: "#000000",
-  road: "#07070d",
-  roadLine: "#2a2a40",
-  river: "#031a3a",
-  riverWave: "#0b3a7a",
-  safe: "#0a2a12",
-  safeEdge: "#1f6b2e",
-  goalWall: "#0d3d18",
-  goal: "#46ff8a",
-  goalBg: "#03130a",
-  goalBorder: "#f5ff00",
-  frog: "#39ff14",
-  frogDark: "#1a8f0a",
-  frogDead: "#ff006e",
-  eyeWhite: "#e6e9ff",
-  eyePupil: "#000000",
-  carColors: ["#ff006e", "#f5ff00", "#00f5ff"],
-  wheel: "#e6e9ff",
-  truck: "#9aa0b8",
-  truckCab: "#00f5ff",
-  log: "#a0522d",
-  logLine: "#5c2e14",
-  turtle: "#2ecc71",
-  turtleScale: "#0f5c2e",
-  turtleSubmerged: "rgba(46, 204, 113, 0.25)",
-  timeLabel: "#e6e9ff",
-  timeTrack: "#1a1a2a",
-  timeOk: "#39ff14",
-  timeWarn: "#f5ff00",
-  timeDanger: "#ff006e",
-  hint: "#00f5ff",
-} as const;
+/** Paleta neón del Vault para RANARIA (la de la spec): alias de la skin NEÓN de `skins.ts`. */
+export const COLORS = SKINS.neon.palette;

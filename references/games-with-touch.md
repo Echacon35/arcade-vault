@@ -18,7 +18,17 @@ Estados: `pendiente` (con motor pero sin `touch.ts`), `parcial` (pad incompleto 
 | 2026-11-11 | `tetra`      | TETRA      | `◀` `▶` `▼` `repeat` (`▲` apagada) | `ROTAR`     | `CAÍDA`     | —                | completo | Repetición emulada 170 ms / 50 ms.          |
 | 2026-11-11 | `rebote`     | REBOTE     | `◀` `▶` (`▲` `▼` apagadas)         | —           | —           | arrastre (pala)  | completo | Motor pasó a `pointermove` + `pointerdown`. |
 | 2026-11-11 | `viborita`   | VIBORITA   | `▲` `▼` `◀` `▶`                    | —           | —           | deslizar (giros) | completo | `swipe: true`, umbral 30 px.                |
+| 2026-11-12 | `ranaria`    | RANARIA    | `▲` `▼` `◀` `▶` (ninguna apagada)  | —           | —           | deslizar (saltos) | completo | Un salto por toque o gesto; sin `repeat`. |
 
 ## Notas por juego
 
 Detalle de decisiones por juego (repetición, gesto, orden B/A, controles sin equivalente táctil, ajustes de CSS) cuando aporte. Los cuatro juegos de SPEC 10 están documentados en la propia spec; su aspecto A/B, en SPEC 11.
+
+### RANARIA (`ranaria`, 2026-11-12)
+
+- **Motor:** flechas y WASD en `window`, un salto de una celda por `keydown`; ignora `e.repeat` (mantener no encadena saltos). La partida espera a la primera flecha. Sin ratón. `KeyP`/`Escape` los cubre el botón `PAUSA`.
+- **Distribución:** cruz de 4 sin `repeat` (el motor descarta la repetición; un evento sintético por toque es el comportamiento del teclado) y 0 acciones, igual que VIBORITA. Sin leyenda; en horizontal solo se ve la media carcasa izquierda.
+- **Gesto:** `swipe: true` (rejilla en 4 direcciones). Cada 30 px de recorrido emite un salto; un deslizamiento largo puede dar varios saltos.
+- **WASD:** sin equivalente táctil necesario; el pad emite flechas.
+- **CSS:** sin cambios.
+- **Pendientes:** prueba en móvil real. Ajenos al juego (afectan a todo el sitio): la cabecera desborda 36 px a 360 px (botón hamburguesa) y 4 px a 915 px (`auth-btn`); el selector de skins a ≤ 720 px es una tira con scroll horizontal propio (PASTEL/CLÁSICO quedan fuera hasta desplazarla, pero se pueden tocar). En la emulación, un toque de un segundo dedo sobre `PAUSA` mientras otro mantiene una flecha no generó `click` (Chromium/CDP); falta comprobarlo en un teléfono.

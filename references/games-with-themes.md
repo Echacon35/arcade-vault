@@ -18,6 +18,7 @@ Estados: `pendiente` (sin skins), `parcial` (faltan skins obligatorias), `comple
 | 2026-11-11 | `tetra`      | TETRA      | —               | pendiente | Paleta neón actual en `constants.ts`.               |
 | 2026-11-11 | `rebote`     | REBOTE     | neon, retro, clasico, pastel | completo | Sprites (E2) solo en NEÓN; RETRO/CLÁSICO/PASTEL vectoriales. RETRO pixelado a 400×300. Verificado en Playwright (2026-11-11). |
 | 2026-11-11 | `viborita`   | VIBORITA   | neon, retro, clasico, pastel | completo | Vectorial, sin sprites. RETRO con manzana pixel-art 7×7. Verificado en Playwright (2026-11-11). |
+| 2026-11-12 | `ranaria`    | RANARIA    | neon, retro, clasico, pastel | completo | Vectorial, sin sprites. RETRO pixelado a 400×300. Verificado en Playwright, lint y build (2026-11-12). |
 
 ## Notas por juego
 
@@ -50,3 +51,11 @@ Detalle de decisiones por juego (sprites, brillo, fuentes, contraste de PASTEL) 
 - **CLÁSICO:** cuerpo `#c8c8c8`, cabeza blanca, rejilla blanca al 6 %, único acento rojo plano `#ff3b30` en la fruta, tallo y hoja gris `#a0a0a0`, aviso blanco.
 - **PASTEL:** fondo `#fff6e9`, cuerpo menta, cabeza celeste, fruta rosa, hoja menta; contorno ciruela `#4a3b5c` de 2 px en segmentos y fruta (1.5 px en la hoja), segmentos con esquinas de 5 px, ojos y aviso ciruela en negrita (9.4:1).
 - Pendiente de verificación visual (Playwright) y de `npm run build`: quedaron para una pasada aparte (solo se pasaron `lint` y `tsc`).
+
+### `ranaria` (2026-11-12)
+
+- Skins en `games/ranaria/skins.ts`; `COLORS` de `constants.ts` es alias de `SKINS.neon.palette`. El array `carColors` pasa a claves `car0`/`car1`/`car2` (por `Entity.variant`); claves añadidas: `windshield` (antes `bg`), `frogDeadStroke` y `outline` (`transparent` en neón/clásico). Flags: `glow` por grupo (`vehicle`/`frog`/`goal`/`time`/`hint`), `outlineWidth`, `lineWidth`, `cornerRadius`, `pixelated`, `timeFont`, `hintFont`.
+- **NEÓN:** paleta exacta de la spec y mismo aspecto que el motor original (mismos `shadowBlur`, trazos y radios).
+- **RETRO:** mundo (fondo, barra y tablero) en canvas offscreen 400×300 creado en la factory y escalado sin suavizado; textos (`TIEMPO`, aviso) a resolución completa en `Press Start 2P` (6:1 y 5:1). Carretera `#0f380f`, río `#306230`, filas seguras `#8bac0f`, troncos/tortugas `#8bac0f`, coches `#9bbc0f`/`#8bac0f`, rana `#9bbc0f`; contorno `#0f380f` de 2 px en todas las piezas y también en las patas de la rana (si no, desaparecen sobre la fila segura). Rana muerta `#0f380f` con contorno claro. Tortugas sumergidas en anillo discontinuo. La barra solo distingue 2 tonos (aviso y peligro comparten `#8bac0f`).
+- **CLÁSICO:** grises, coches blanco/`#c8c8c8`/`#a0a0a0`, único acento verde `#00d84a` en la rana y bocas ocupadas; trazo 1 px, esquinas rectas, sin brillo. La rana muerta es blanca (se confunde algo con un coche durante los 600 ms).
+- **PASTEL:** fondo `#fff6e9`, carretera `#ebe3ee`, río `#cfe8ff`, filas seguras mantequilla, muro lavanda; coches rosa/lavanda/celeste, camión mantequilla con cabina melocotón, troncos `#e6c4a3`, tortugas `#ffd6a5`, rana menta; contorno ciruela `#4a3b5c` de 2 px, esquinas 8 px. Textos ciruela (9.5:1 sobre crema, 8.8:1 sobre la fila segura). Velo de pausa `bg-black/80` verificado.

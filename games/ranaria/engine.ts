@@ -1,9 +1,12 @@
 import { isTypingTarget } from "../shared/input";
+import { DEFAULT_SKIN } from "../shared/skins";
 import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   GameStats,
+  SkinId,
 } from "../types";
 import {
   BOARD_H,
@@ -12,7 +15,6 @@ import {
   BOARD_Y,
   CELL,
   DEATH_MS,
-  COLORS,
   FROG_HITBOX_INSET,
   COLS,
   GOAL_COLS,
@@ -45,6 +47,7 @@ import {
   type Lane,
   moveLane,
 } from "./lanes";
+import { type Skin, SKINS } from "./skins";
 type Phase = "waiting" | "playing" | "dying" | "gameover";
 type State = {
   lanes: Lane[];
@@ -303,43 +306,54 @@ function update(state: State, dt: number) {
 // ─── Dibujo ────────────────────────────────────────────────────────────────
 const cellX = (col: number) => col * CELL;
 const cellY = (row: number) => row * CELL;
-function drawTimeBar(ctx: CanvasRenderingContext2D, state: State) {
+const TIME_BAR = { x: BOARD_X + 90, w: BOARD_W - 90, y: 14, h: 12 };
+/** Contorno de la skin sobre el trazado actual (no hace nada si `outlineWidth` es 0). */
+function outlinePath(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  color = skin.palette.outline,
+) {
+  if (skin.outlineWidth <= 0) return;
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = skin.outlineWidth;
+  ctx.stroke();
+}
+/** Barra de TIEMPO (sin la etiqueta, que va a resolución completa en `drawTexts`). */
+function drawTimeBar(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  const { palette } = skin;
   const ratio = state.timeTotal > 0 ? state.timeLeft / state.timeTotal : 0;
-  const barX = BOARD_X + 90;
-  const barW = BOARD_W - 90;
-  const barY = 14;
-  const barH = 12;
+  const { x, y, w, h } = TIME_BAR;
   ctx.save();
-  ctx.font = "bold 16px monospace";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = COLORS.timeLabel;
-  ctx.fillText("TIEMPO", BOARD_X, barY + barH / 2);
-  ctx.fillStyle = COLORS.timeTrack;
-  ctx.fillRect(barX, barY, barW, barH);
+  ctx.fillStyle = palette.timeTrack;
+  ctx.fillRect(x, y, w, h);
   const color =
     ratio > 0.5
-      ? COLORS.timeOk
+      ? palette.timeOk
       : ratio > 0.25
-        ? COLORS.timeWarn
-        : COLORS.timeDanger;
+        ? palette.timeWarn
+        : palette.timeDanger;
   ctx.fillStyle = color;
   ctx.shadowColor = color;
-  ctx.shadowBlur = 8;
-  ctx.fillRect(barX, barY, barW * ratio, barH);
+  ctx.shadowBlur = skin.glow.time;
+  ctx.fillRect(x, y, w * ratio, h);
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  outlinePath(ctx, skin);
   ctx.restore();
 }
-function drawZones(ctx: CanvasRenderingContext2D, state: State) {
+function drawZones(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  const { palette } = skin;
   // Río.
-  ctx.fillStyle = COLORS.river;
+  ctx.fillStyle = palette.river;
   ctx.fillRect(
     0,
     cellY(ROW_RIVER_TOP),
     BOARD_W,
     (ROW_RIVER_BOT - ROW_RIVER_TOP + 1) * CELL,
   );
-  ctx.strokeStyle = COLORS.riverWave;
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = palette.riverWave;
+  ctx.lineWidth = skin.pixelated ? 2 : 1;
   ctx.beginPath();
   for (let r = ROW_RIVER_TOP; r <= ROW_RIVER_BOT; r++) {
     for (let c = 0; c < COLS; c += 2) {
@@ -352,15 +366,15 @@ function drawZones(ctx: CanvasRenderingContext2D, state: State) {
   }
   ctx.stroke();
   // Carretera con líneas discontinuas entre carriles.
-  ctx.fillStyle = COLORS.road;
+  ctx.fillStyle = palette.road;
   ctx.fillRect(
     0,
     cellY(ROW_ROAD_TOP),
     BOARD_W,
     (ROW_ROAD_BOT - ROW_ROAD_TOP + 1) * CELL,
   );
-  ctx.strokeStyle = COLORS.roadLine;
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = palette.roadLine;
+  ctx.lineWidth = skin.lineWidth;
   ctx.setLineDash([16, 12]);
   ctx.beginPath();
   for (let r = ROW_ROAD_TOP + 1; r <= ROW_ROAD_BOT; r++) {
@@ -370,74 +384,86 @@ function drawZones(ctx: CanvasRenderingContext2D, state: State) {
   ctx.stroke();
   ctx.setLineDash([]);
   // Filas seguras: mediana y salida.
+  const inset = skin.lineWidth / 2;
   for (const r of [ROW_SAFE_MID, ROW_START]) {
-    ctx.fillStyle = COLORS.safe;
+    ctx.fillStyle = palette.safe;
     ctx.fillRect(0, cellY(r), BOARD_W, CELL);
-    ctx.strokeStyle = COLORS.safeEdge;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, cellY(r) + 1, BOARD_W - 2, CELL - 2);
+    ctx.strokeStyle = palette.safeEdge;
+    ctx.lineWidth = skin.lineWidth;
+    ctx.strokeRect(
+      inset,
+      cellY(r) + inset,
+      BOARD_W - inset * 2,
+      CELL - inset * 2,
+    );
   }
   // Fila de metas: muro con 5 bocas.
-  ctx.fillStyle = COLORS.goalWall;
+  ctx.fillStyle = palette.goalWall;
   ctx.fillRect(0, cellY(ROW_GOALS), BOARD_W, CELL);
   GOAL_COLS.forEach((col, i) => {
     const x = cellX(col) + 2;
     const y = cellY(ROW_GOALS) + 4;
     const w = GOAL_WIDTH * CELL - 4;
     const h = CELL - 4;
-    ctx.fillStyle = COLORS.goalBg;
+    ctx.fillStyle = palette.goalBg;
     ctx.fillRect(x, y, w, h);
     ctx.save();
-    ctx.strokeStyle = COLORS.goalBorder;
-    ctx.shadowColor = COLORS.goalBorder;
-    ctx.shadowBlur = 6;
+    ctx.strokeStyle = palette.goalBorder;
+    ctx.shadowColor = palette.goalBorder;
+    ctx.shadowBlur = skin.glow.goal;
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
     ctx.restore();
     if (state.goals[i]) {
-      drawFrogShape(ctx, x + w / 2, y + h / 2, "up", false, COLORS.goal);
+      drawFrogShape(ctx, skin, x + w / 2, y + h / 2, "up", false, false, true);
     }
   });
 }
 function drawCar(
   ctx: CanvasRenderingContext2D,
+  skin: Skin,
   e: Entity,
   row: number,
   dir: 1 | -1,
 ) {
+  const { palette } = skin;
   const x = cellX(e.col) + 3;
   const y = cellY(row) + 8;
   const w = e.width * CELL - 6;
   const h = CELL - 16;
-  const body = COLORS.carColors[e.variant ?? 0];
+  const body = [palette.car0, palette.car1, palette.car2][e.variant ?? 0];
   ctx.save();
-  ctx.fillStyle = COLORS.wheel;
+  ctx.fillStyle = palette.wheel;
   for (const wx of [x + 6, x + w - 6]) {
     for (const wy of [y, y + h]) {
       ctx.beginPath();
-      ctx.arc(wx, wy, 3.5, 0, Math.PI * 2);
+      if (skin.pixelated) ctx.rect(wx - 4, wy - 4, 8, 8);
+      else ctx.arc(wx, wy, 3.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }
   ctx.fillStyle = body;
   ctx.shadowColor = body;
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = skin.glow.vehicle;
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 5);
+  ctx.roundRect(x, y, w, h, skin.cornerRadius);
   ctx.fill();
+  outlinePath(ctx, skin);
   // Parabrisas en el sentido de la marcha.
   ctx.shadowBlur = 0;
-  ctx.fillStyle = COLORS.bg;
+  ctx.fillStyle = palette.windshield;
   const wsX = dir > 0 ? x + w - 12 : x + 4;
   ctx.fillRect(wsX, y + 4, 8, h - 8);
   ctx.restore();
 }
 function drawTruck(
   ctx: CanvasRenderingContext2D,
+  skin: Skin,
   e: Entity,
   row: number,
   dir: 1 | -1,
 ) {
+  const { palette } = skin;
   const x = cellX(e.col) + 3;
   const y = cellY(row) + 6;
   const w = e.width * CELL - 6;
@@ -446,27 +472,38 @@ function drawTruck(
   const cabX = dir > 0 ? x + w - cabW : x;
   const trailerX = dir > 0 ? x : x + cabW + 3;
   ctx.save();
-  ctx.fillStyle = COLORS.truck;
-  ctx.fillRect(trailerX, y, w - cabW - 3, h);
-  ctx.fillStyle = COLORS.truckCab;
-  ctx.shadowColor = COLORS.truckCab;
-  ctx.shadowBlur = 10;
+  ctx.fillStyle = palette.truck;
   ctx.beginPath();
-  ctx.roundRect(cabX, y + 2, cabW, h - 4, 4);
+  ctx.roundRect(trailerX, y, w - cabW - 3, h, skin.outlineWidth > 0 ? 3 : 0);
   ctx.fill();
+  outlinePath(ctx, skin);
+  ctx.fillStyle = palette.truckCab;
+  ctx.shadowColor = palette.truckCab;
+  ctx.shadowBlur = skin.glow.vehicle;
+  ctx.beginPath();
+  ctx.roundRect(cabX, y + 2, cabW, h - 4, Math.min(4, skin.cornerRadius));
+  ctx.fill();
+  outlinePath(ctx, skin);
   ctx.restore();
 }
-function drawLog(ctx: CanvasRenderingContext2D, e: Entity, row: number) {
+function drawLog(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  e: Entity,
+  row: number,
+) {
+  const { palette } = skin;
   const x = cellX(e.col) + 2;
   const y = cellY(row) + 6;
   const w = e.width * CELL - 4;
   const h = CELL - 12;
   ctx.save();
-  ctx.fillStyle = COLORS.log;
+  ctx.fillStyle = palette.log;
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, h / 2);
+  ctx.roundRect(x, y, w, h, skin.pixelated ? 4 : h / 2);
   ctx.fill();
-  ctx.strokeStyle = COLORS.logLine;
+  outlinePath(ctx, skin);
+  ctx.strokeStyle = palette.logLine;
   ctx.lineWidth = 2;
   ctx.beginPath();
   for (let lx = x + 14; lx < x + w - 10; lx += 18) {
@@ -478,25 +515,34 @@ function drawLog(ctx: CanvasRenderingContext2D, e: Entity, row: number) {
   ctx.stroke();
   ctx.restore();
 }
-function drawTurtles(ctx: CanvasRenderingContext2D, e: Entity, row: number) {
+function drawTurtles(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  e: Entity,
+  row: number,
+) {
+  const { palette } = skin;
   ctx.save();
   for (let i = 0; i < e.width; i++) {
     const cx = cellX(e.col + i) + CELL / 2;
     const cy = cellY(row) + CELL / 2;
     if (e.submerged) {
-      ctx.strokeStyle = COLORS.turtleSubmerged;
+      ctx.strokeStyle = palette.turtleSubmerged;
       ctx.lineWidth = 2;
+      ctx.setLineDash(skin.pixelated ? [4, 4] : []);
       ctx.beginPath();
       ctx.arc(cx, cy, 14, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.setLineDash([]);
       continue;
     }
-    ctx.fillStyle = COLORS.turtle;
+    ctx.fillStyle = palette.turtle;
     ctx.beginPath();
     ctx.arc(cx, cy, 15, 0, Math.PI * 2);
     ctx.fill();
+    outlinePath(ctx, skin);
     // Escamas del caparazón.
-    ctx.strokeStyle = COLORS.turtleScale;
+    ctx.strokeStyle = palette.turtleScale;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(cx, cy, 8, 0, Math.PI * 2);
@@ -509,13 +555,13 @@ function drawTurtles(ctx: CanvasRenderingContext2D, e: Entity, row: number) {
   }
   ctx.restore();
 }
-function drawEntities(ctx: CanvasRenderingContext2D, state: State) {
+function drawEntities(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
   for (const lane of state.lanes) {
     for (const e of lane.entities) {
-      if (e.type === "car") drawCar(ctx, e, lane.row, lane.dir);
-      else if (e.type === "truck") drawTruck(ctx, e, lane.row, lane.dir);
-      else if (e.type === "log") drawLog(ctx, e, lane.row);
-      else drawTurtles(ctx, e, lane.row);
+      if (e.type === "car") drawCar(ctx, skin, e, lane.row, lane.dir);
+      else if (e.type === "truck") drawTruck(ctx, skin, e, lane.row, lane.dir);
+      else if (e.type === "log") drawLog(ctx, skin, e, lane.row);
+      else drawTurtles(ctx, skin, e, lane.row);
     }
   }
 }
@@ -525,22 +571,29 @@ const FACING_ANGLE: Record<Direction, number> = {
   down: Math.PI,
   left: -Math.PI / 2,
 };
-/** Rana centrada en (cx, cy): cuerpo 28 × 24, ojos y patas (extendidas al saltar). */
+/**
+ * Rana centrada en (cx, cy): cuerpo 28 × 24, ojos y patas (extendidas al
+ * saltar). `inGoal` la pinta con el color de boca ocupada.
+ */
 function drawFrogShape(
   ctx: CanvasRenderingContext2D,
+  skin: Skin,
   cx: number,
   cy: number,
   facing: Direction,
   jumping: boolean,
-  color: string,
+  dead: boolean,
+  inGoal: boolean,
 ) {
+  const { palette } = skin;
+  const color = dead ? palette.frogDead : inGoal ? palette.goal : palette.frog;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(FACING_ANGLE[facing]);
   // Patas.
-  ctx.strokeStyle = COLORS.frogDark;
+  ctx.strokeStyle = palette.frogDark;
   ctx.lineWidth = 4;
-  ctx.lineCap = "round";
+  ctx.lineCap = skin.pixelated ? "square" : "round";
   const reach = jumping ? 17 : 13;
   ctx.beginPath();
   for (const s of [-1, 1]) {
@@ -549,78 +602,135 @@ function drawFrogShape(
     ctx.moveTo(s * 8, 6);
     ctx.lineTo(s * reach, reach - 2);
   }
+  // Con contorno, las patas llevan un borde para leerse sobre filas del mismo tono.
+  if (skin.outlineWidth > 0) {
+    ctx.strokeStyle = palette.outline;
+    ctx.lineWidth = 4 + skin.outlineWidth * 2;
+    ctx.stroke();
+    ctx.strokeStyle = palette.frogDark;
+    ctx.lineWidth = 4;
+  }
   ctx.stroke();
   // Cuerpo.
   ctx.fillStyle = color;
   ctx.shadowColor = color;
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = skin.glow.frog;
   ctx.beginPath();
   ctx.ellipse(0, 0, 12, 14, 0, 0, Math.PI * 2);
   ctx.fill();
+  outlinePath(ctx, skin, dead ? palette.frogDeadStroke : palette.outline);
   ctx.shadowBlur = 0;
   // Ojos.
   for (const s of [-1, 1]) {
-    ctx.fillStyle = COLORS.eyeWhite;
+    ctx.fillStyle = palette.eyeWhite;
     ctx.beginPath();
     ctx.arc(s * 6, -9, 4.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = COLORS.eyePupil;
+    ctx.fillStyle = palette.eyePupil;
     ctx.beginPath();
     ctx.arc(s * 6, -10, 2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
 }
-function drawFrog(ctx: CanvasRenderingContext2D, state: State) {
+function drawFrog(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
   const { frog } = state;
   const t = frog.animating ? Math.min(1, frog.animT / JUMP_MS) : 0;
   const col = frog.col + (frog.targetCol - frog.col) * t;
   const row = frog.row + (frog.targetRow - frog.row) * t;
   const dead = state.phase === "dying" || state.phase === "gameover";
-  const color = dead ? COLORS.frogDead : COLORS.frog;
   drawFrogShape(
     ctx,
+    skin,
     cellX(col) + CELL / 2,
     cellY(row) + CELL / 2,
     frog.facing,
     frog.animating,
-    color,
+    dead,
+    false,
   );
 }
-function drawHint(ctx: CanvasRenderingContext2D) {
-  ctx.save();
-  ctx.font = "bold 20px monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = COLORS.hint;
-  ctx.shadowColor = COLORS.hint;
-  ctx.shadowBlur = 10;
-  ctx.fillText(HINT, BOARD_W / 2, cellY(ROW_SAFE_MID) + CELL / 2);
-  ctx.restore();
-}
-function draw(ctx: CanvasRenderingContext2D, state: State) {
-  ctx.fillStyle = COLORS.bg;
+/** Fondo, barra de tiempo y tablero (lo que se pixela en RETRO). */
+function drawWorld(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  ctx.fillStyle = skin.palette.bg;
   ctx.fillRect(0, 0, W, H);
-  drawTimeBar(ctx, state);
+  drawTimeBar(ctx, state, skin);
   ctx.save();
   ctx.translate(BOARD_X, BOARD_Y);
   // Lo que sale del tablero (entidades en el bucle) no se ve en los márgenes.
   ctx.beginPath();
   ctx.rect(0, 0, BOARD_W, BOARD_H);
   ctx.clip();
-  drawZones(ctx, state);
-  drawEntities(ctx, state);
-  drawFrog(ctx, state);
-  if (state.phase === "waiting") drawHint(ctx);
+  drawZones(ctx, state, skin);
+  drawEntities(ctx, state, skin);
+  drawFrog(ctx, state, skin);
   ctx.restore();
+}
+/** Textos del canvas, siempre a resolución completa: etiqueta TIEMPO y aviso inicial. */
+function drawTexts(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+  const { palette } = skin;
+  ctx.save();
+  ctx.textBaseline = "middle";
+  ctx.font = skin.timeFont;
+  ctx.textAlign = "left";
+  ctx.fillStyle = palette.timeLabel;
+  ctx.fillText("TIEMPO", BOARD_X, TIME_BAR.y + TIME_BAR.h / 2);
+  if (state.phase === "waiting") {
+    ctx.font = skin.hintFont;
+    ctx.textAlign = "center";
+    ctx.fillStyle = palette.hint;
+    ctx.shadowColor = palette.hint;
+    ctx.shadowBlur = skin.glow.hint;
+    ctx.fillText(
+      HINT,
+      BOARD_X + BOARD_W / 2,
+      BOARD_Y + cellY(ROW_SAFE_MID) + CELL / 2,
+    );
+  }
+  ctx.restore();
+}
+/** Lienzo a media resolución para RETRO, creado en la factory. */
+type LowRes = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D };
+function draw(
+  ctx: CanvasRenderingContext2D,
+  state: State,
+  skin: Skin,
+  low: LowRes | null,
+) {
+  if (skin.pixelated && low) {
+    low.ctx.setTransform(
+      low.canvas.width / W,
+      0,
+      0,
+      low.canvas.height / H,
+      0,
+      0,
+    );
+    drawWorld(low.ctx, state, skin);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(low.canvas, 0, 0, W, H);
+    ctx.restore();
+  } else {
+    drawWorld(ctx, state, skin);
+  }
+  drawTexts(ctx, state, skin);
 }
 // ─── Factory ───────────────────────────────────────────────────────────────
 export const createRanariaGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D no disponible");
+  let skin: Skin = SKINS[options?.skin ?? DEFAULT_SKIN];
+  // RETRO: el mundo se dibuja a 400×300 y se escala sin suavizado.
+  const lowCanvas = document.createElement("canvas");
+  lowCanvas.width = W / 2;
+  lowCanvas.height = H / 2;
+  const lowCtx = lowCanvas.getContext("2d");
+  const low: LowRes | null = lowCtx ? { canvas: lowCanvas, ctx: lowCtx } : null;
   let state = createState();
   let rafId: number | null = null;
   let lastTime: number | null = null;
@@ -661,7 +771,7 @@ export const createRanariaGame: GameFactory = (
     const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, MAX_DT);
     lastTime = ts;
     update(state, dt);
-    draw(ctx, state);
+    draw(ctx, state, skin, low);
     sync();
     if (state.phase === "gameover") return;
     rafId = requestAnimationFrame(loop);
@@ -693,7 +803,7 @@ export const createRanariaGame: GameFactory = (
     state.pendingDir = dir;
   };
   window.addEventListener("keydown", onKeyDown);
-  draw(ctx, state);
+  draw(ctx, state, skin, low);
   emitStats();
   start();
   return {
@@ -714,9 +824,15 @@ export const createRanariaGame: GameFactory = (
       state = createState();
       lastStats = null;
       gameOverNotified = false;
-      draw(ctx, state);
+      draw(ctx, state, skin, low);
       emitStats();
       start();
+    },
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id];
+      // Con el bucle parado (pausa o fin) se redibuja ya; en juego lo hace el siguiente frame.
+      if (rafId === null) draw(ctx, state, skin, low);
     },
     destroy() {
       if (destroyed) return;

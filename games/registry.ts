@@ -1,6 +1,7 @@
 import { createAsteroidsGame } from "./asteroides/engine";
 import { ASTEROIDES_TOUCH } from "./asteroides/touch";
 import { createRanariaGame } from "./ranaria/engine";
+import { RANARIA_TOUCH } from "./ranaria/touch";
 import { createReboteGame } from "./rebote/engine";
 import { REBOTE_TOUCH } from "./rebote/touch";
 import { SKIN_IDS } from "./shared/skins";
@@ -23,6 +24,7 @@ export const GAME_SKINS: Partial<Record<string, readonly SkinId[]>> = {
   asteroides: SKIN_IDS,
   rebote: SKIN_IDS,
   viborita: SKIN_IDS,
+  ranaria: SKIN_IDS,
 };
 /** SPEC 10: distribución del pad táctil por juego. Un juego fuera de este mapa no muestra pad. */
 export const GAME_TOUCH: Partial<Record<string, TouchLayout>> = {
@@ -30,4 +32,5 @@ export const GAME_TOUCH: Partial<Record<string, TouchLayout>> = {
   tetra: TETRA_TOUCH,
   rebote: REBOTE_TOUCH,
   viborita: VIBORITA_TOUCH,
+  ranaria: RANARIA_TOUCH,
 };
