@@ -317,6 +317,43 @@
   .av-nav .hamburger {
     display: none;
   }
+  /* SPEC 12: menú de cuenta bajo ALIAS ▾. */
+  .av-nav .account {
+    position: relative;
+  }
+  .account-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 60;
+    width: 240px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    box-shadow: 0 0 24px rgba(0, 245, 255, 0.18);
+  }
+  .account-email {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    overflow-wrap: anywhere;
+  }
+  .account-menu .btn,
+  .mobile-account .btn {
+    padding: 10px 12px;
+    font-size: 9px;
+  }
+  .av-mobile-panel .mobile-account {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 12px;
+    border-bottom: 1px dashed var(--line-2);
+  }
   @media (max-width: 840px) {
     .av-nav {
       padding: 12px 16px;
