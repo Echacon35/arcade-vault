@@ -2375,6 +2375,79 @@
     padding: 12px;
     font-size: 9px;
   }
+  /* SPEC 12: errores de campo, avisos y enlace de recuperación. */
+  .field input[aria-invalid="true"] {
+    border-color: var(--magenta);
+  }
+  .field input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 12px rgba(255, 0, 110, 0.35);
+  }
+  .field input:disabled {
+    opacity: 0.6;
+  }
+  .field-error {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--magenta);
+  }
+  /* A diferencia de .toast-saved, el texto salta de línea: los mensajes no caben en 440 px. */
+  .auth-notice {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-left: 2px solid currentColor;
+    font-family: var(--pixel);
+    font-size: 9px;
+    line-height: 1.8;
+    letter-spacing: 0.1em;
+  }
+  .auth-notice.error {
+    color: var(--magenta);
+    background: rgba(255, 0, 110, 0.07);
+    text-shadow: 0 0 6px rgba(255, 0, 110, 0.45);
+  }
+  .auth-notice.ok {
+    color: var(--green);
+    background: rgba(0, 255, 136, 0.06);
+    text-shadow: 0 0 6px rgba(0, 255, 136, 0.45);
+  }
+  .auth-notice.info {
+    color: var(--cyan);
+    background: rgba(0, 245, 255, 0.06);
+  }
+  .auth-notice .detail {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    text-shadow: none;
+    overflow-wrap: anywhere;
+  }
+  .auth-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 140ms;
+  }
+  .auth-link:hover,
+  .auth-link:focus-visible {
+    color: var(--cyan);
+  }
+  .auth-link:focus-visible,
+  .auth-tabs button:focus-visible {
+    outline: 1px solid var(--cyan);
+    outline-offset: 2px;
+  }
+  .auth-card .btn:disabled {
+    opacity: 0.55;
+    cursor: progress;
+  }
   /* ===== salón ===== */
   .av-hall {
     max-width: 1200px;
