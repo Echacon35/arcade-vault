@@ -134,17 +134,6 @@ export const GAMES: Game[] = [
     plays: "15.6K",
   },
   {
-    id: "ranaria",
-    title: "RANARIA",
-    short: "Cruza la autopista de pixeles.",
-    long: "Salta entre carriles de coches a toda velocidad y troncos a la deriva en el río. Llega a los nenúfares antes de que se acabe el tiempo.",
-    cat: "ARCADE",
-    cover: "cover-rana",
-    color: "green",
-    best: 18900,
-    plays: "6.4K",
-  },
-  {
     id: "duelo-pixel",
     title: "DUELO PIXEL",
     short: "Dos paletas. Una pelota. Reflejos máximos.",

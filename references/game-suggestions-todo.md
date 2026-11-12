@@ -12,7 +12,7 @@ Estados: `sugerido` · `elegido` · `descartado` · `en-spec` · `implementado`.
 | —          | `tetra`      | TETRA      | PUZZLE    | —          | implementado | SPEC 07, previo a la memoria |
 | —          | `rebote`     | REBOTE     | ARCADE    | —          | implementado | SPEC 08, previo a la memoria |
 | —          | `viborita`   | VIBORITA   | ARCADE    | —          | implementado | SPEC 09, previo a la memoria |
-| 2026-11-11 | `ranaria`    | RANARIA    | ARCADE    | 28/30      | sugerido     | Recomendación principal: cruce por carriles con timing; mecánica nueva en el catálogo; entrada simulada ya existente en `lib/games.ts` |
+| 2026-11-11 | `ranaria`    | RANARIA    | ARCADE    | 28/30      | implementado | Spec de game jam `specs/game-jam/frogger/01-frogger-core.md`; migración `add_game_ranaria` (2026-11-12) |
 | 2026-11-11 | `invasores`  | INVASORES  | SHOOTER   | 25/30      | sugerido     | Alternativa: shooter fijo por oleadas; barato y competitivo, pero repite categoría SHOOTER |
 | 2026-11-11 | `gloton`     | GLOTÓN     | ARCADE    | 25/30      | sugerido     | Alternativa: laberinto con perseguidores; muy competitivo, pero coste alto (IA de 4 espectros + laberinto) |
 | 2026-11-11 | `enjambre`   | ENJAMBRE   | SHOOTER   | 29/30      | sugerido     | Twin-stick con teclado (WASD mueve, flechas disparan) en arena; multiplicador por gemas. Riesgo: ghosting de teclas |
@@ -46,7 +46,7 @@ Estados: `sugerido` · `elegido` · `descartado` · `en-spec` · `implementado`.
 - Varias no tienen vidas (inverso, cristales, gotas, burbujas, pulso): emiten `lives` 1/0 mientras E1 no esté aplicada; valorar aplicar E1 antes.
 - Colores: `yellow` no lo usa ningún motor; repartirlo entre las nuevas para no saturar `green`.
 
-### `ranaria` — RANARIA (sugerido 2026-11-11)
+### `ranaria` — RANARIA (sugerido 2026-11-11, implementado 2026-11-12)
 
 - Ya existe como entrada simulada en `lib/games.ts` (`cover-rana`, color `green`) y probablemente en la tabla `games`: la spec daría motor real a una entrada existente en lugar de crear una nueva. Verificar la fila en Supabase.
 - Mecánica: rejilla de 13 columnas × 13 filas (celdas de ~48 px, centrada en 800×600). Mitad inferior, carretera con 5 carriles de vehículos; mitad superior, río con troncos y tortugas que se sumergen; arriba, 5 nenúfares. Salto de una celda por pulsación (flechas/WASD), sin repetición automática.

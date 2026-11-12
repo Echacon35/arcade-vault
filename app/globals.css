@@ -1344,22 +1344,6 @@
     filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.8))
       drop-shadow(0 0 14px rgba(57, 255, 20, 0.35));
   }
-  .cover-rana {
-    background: linear-gradient(180deg, #001f2a, #0a0a18);
-  }
-  .cover-rana::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      repeating-linear-gradient(
-        0deg,
-        rgba(0, 245, 255, 0.18) 0 20px,
-        transparent 20px 40px
-      ),
-      radial-gradient(circle at 50% 55%, var(--green) 0 14px, transparent 15px);
-    filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.5));
-  }
   .cover-duelo {
     background: #0a0a18;
   }
@@ -1699,8 +1683,7 @@
     --tp-shell-shadow:
       0 30px 80px -30px rgba(0, 245, 255, 0.4),
       0 0 0 1px rgba(255, 255, 255, 0.02),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+      inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -2px 0 rgba(0, 0, 0, 0.6);
     position: relative;
     display: flex;
     align-items: center;

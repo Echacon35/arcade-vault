@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Proyecto
 
-SArcade Vault: plataforma para jugar juegos online y competir por la mayor cantidad de puntos. El catálogo y el leaderboard viven en Supabase; las puntuaciones se guardan con nombre libre (sin cuentas reales).
+Arcade Vault: plataforma para jugar juegos online y competir por la mayor cantidad de puntos. El catálogo y el leaderboard viven en Supabase; las puntuaciones se guardan con nombre libre (sin cuentas reales).
 
-**Juegos con motor real:** ASTEROIDES (SPEC 05), TETRA (SPEC 07), REBOTE (SPEC 08) y VIBORITA (SPEC 09). El resto de entradas de `lib/games.ts` (`bloque-buster`, `caida`, `serpentina`, …) no tienen motor y usan la partida simulada de `GamePlayer`.
+**Juegos con motor real:** ASTEROIDES (SPEC 05), TETRA (SPEC 07), REBOTE (SPEC 08), VIBORITA (SPEC 09) y RANARIA (spec de game jam `specs/game-jam/frogger/01-frogger-core.md`). El resto de entradas de `lib/games.ts` (`bloque-buster`, `caida`, `serpentina`, …) no tienen motor y usan la partida simulada de `GamePlayer`.
 
 **Rutas (`app/`):**
 
@@ -20,7 +20,7 @@ SArcade Vault: plataforma para jugar juegos online y competir por la mayor canti
 - `/acerca-de` — información y formulario de contacto vía Resend (`actions.ts`).
 - `/acceso` — login/registro simulado: la "sesión" es un nombre en `localStorage` (`lib/session.ts`, `components/session-provider.tsx`); no hay auth real.
 
-El desarrollo sigue **Spec Driven Design**: ante una feature nueva se escribe primero la spec en `specs/NN-<slug>.md` (con `/spec`) y luego se implementa a partir de ella (con `/spec-impl`, que crea la rama `spec-NN-<slug>` según `specs/.spec-config.yml`). Las specs llevan un campo `Estado` (Borrador → Aprobado → Implementado) y una sección "Problemas conocidos" cuando aplica.
+El desarrollo sigue **Spec Driven Design**: ante una feature nueva se escribe primero la spec en `specs/NN-<slug>.md` (con `/spec`) y luego se implementa a partir de ella (con `/spec-impl`, que crea la rama `spec-NN-<slug>` según `specs/.spec-config.yml`). Las specs llevan un campo `Estado` (Borrador → Aprobado → Implementado) y una sección "Problemas conocidos" cuando aplica. Las specs de juegos originales del agente `game-jam` viven aparte, en `specs/game-jam/<id>/` (hoy: `frogger/`, implementada como RANARIA, y `apila/`, en Borrador).
 
 ## Comandos
 
@@ -64,25 +64,32 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 ## Juegos
 
 - **Contrato de motor** (`games/types.ts`): `GameFactory(canvas, callbacks) → GameInstance` con `pause/resume/restart/destroy`; callbacks `onStats({ score, lives, level })` (solo cuando cambia), `onGameOver(finalScore)` y `onPauseToggle()`. El detalle y las extensiones permitidas están en `.claude/skills/add-game/contract.md`.
-- **Registro:** `games/registry.ts` → `GAME_ENGINES`, indexado por el `id` del catálogo. Cada motor vive en `games/<id>/` (`engine.ts`, `constants.ts` y módulos propios). Utilidades compartidas en `games/shared/` (p. ej. `isTypingTarget` para no capturar teclas mientras se escribe el nombre).
+- **Registro:** `games/registry.ts` → `GAME_ENGINES`, indexado por el `id` del catálogo. Cada motor vive en `games/<id>/` (`engine.ts`, `constants.ts` y módulos propios). Utilidades compartidas en `games/shared/`: `input.ts` (`isTypingTarget`, para no capturar teclas mientras se escribe el nombre), `skins.ts` (`SKIN_IDS`) y `touch.ts` (tipo `TouchLayout`).
 - **Canvas:** siempre 800×600 (`components/game-canvas.tsx`); el HUD de React solo muestra puntuación, vidas y nivel. Todo lo demás se dibuja dentro del canvas.
 - **Assets y sonido** (extensiones E2/E3, aplicadas por REBOTE): en `public/games/<id>/…`, cargados con `new Image()` / `new Audio()` dentro de la factory, nunca al importar el módulo.
-- **Skins (E4, aplicada):** cada juego define las suyas en `games/<id>/skins.ts` (mínimo `neon`, `retro`, `clasico`, `pastel`) y se registra en `GAME_SKINS`; las aplica el agente `skin-designer` (registro en `references/games-with-themes.md`).
-- **Controles táctiles (SPEC 10):** cada juego con motor declara su pad en `games/<id>/touch.ts` y se registra en `GAME_TOUCH`; sin entrada no hay pad en móvil. Los juegos nuevos los porta el agente `mobile-porter` (registro en `references/games-with-touch.md`).
+- **Skins (E4, aplicada):** cada juego define las suyas en `games/<id>/skins.ts` (mínimo `neon`, `retro`, `clasico`, `pastel`) y se registra en `GAME_SKINS`; las aplica el agente `skin-designer` (registro en `references/games-with-themes.md`). Pendiente: TETRA aún no tiene `skins.ts` ni está en `GAME_SKINS`.
+- **Controles táctiles (SPEC 10 y 11):** cada juego con motor declara su pad en `games/<id>/touch.ts` y se registra en `GAME_TOUCH`; sin entrada no hay pad en móvil. El pad lo pinta `components/touch-pad.tsx` con el aspecto del Gamepad MK-II (SPEC 11, referencia en `references/gamepad-assets/`). Los juegos nuevos los porta el agente `mobile-porter` (registro en `references/games-with-touch.md`).
 - **E1 (vidas opcionales) no está aplicada:** `GameStats.lives` sigue siendo `number`; TETRA emite `1`/`0` en lugar de `null`.
 - **Doble registro del juego:** además de `GAME_ENGINES` y la fila en Supabase, cada juego va en `GAMES` de `lib/games.ts` (lo usan la landing y `generateStaticParams` de `/juegos/[id]/jugar`) y su portada `.cover-<id>` en `app/globals.css`.
-- **juegos** ver archivo references\implemented-games.md cuando necesites revisar por los juegos implementadosy como implementar uno nuevo
+- **Referencias:** `references/implemented-games.md` (juegos implementados, categoría y color) y `.claude/skills/add-game/recipe.md` (cómo integrar uno nuevo).
 
 ## Skills
 
 - `/spec` y `/spec-impl` — de [Klerith/fernando-skills](https://github.com/Klerith/fernando-skills) (`npx skills@latest add Klerith/fernando-skills`). Instaladas en `.claude/skills/` y `.agents/skills/`, versionadas en `skills-lock.json`.
 - `/spec-impl-game <spec>` (`.claude/skills/spec-impl-game/`) — igual que `/spec-impl` (lee y sigue sus fases 1–4, admite rutas de `specs/game-jam/<id>/`) y, al terminar el último paso, lanza automáticamente y en secuencia `skin-designer` y después `mobile-porter` con el `id` del juego (solo si está en `GAME_ENGINES`). No commitea.
 - `/add-game <juego>` (`.claude/skills/add-game/`) — para integrar un juego de `references/started-games/`. Especialización de `/spec`: analiza el código original y escribe su spec en Borrador con la receta de integración (motor en `games/<id>/`, `GAME_ENGINES`, `GAMES`, portada, fila en la tabla `games` de Supabase, TOP 10 y Salón). No escribe código; después se implementa con `/spec-impl`. Archivos de apoyo: `recipe.md` (receta y trampas conocidas), `contract.md` (contrato de motor y extensiones E1–E3) y `game-spec-template.md`.
-- Agente `game-planner` (`.claude/agents/game-planner.md`) — planifica y decide qué juego nuevo encaja en la plataforma. Su memoria de sugerencias (con estado) está en `references/game-suggestions-todo.md`; no escribe código.
-- Agente `game-jam` (`.claude/agents/game-jam.md`) — recibe un tema, diseña un juego original y escribe sus specs por fases en `specs/game-jam/<id>/` (`01-<id>-motor.md`, `02-<id>-integracion.md` y, si aporta, `03-<id>-pulido.md`), en Borrador. Plantillas en `references/game-jam/`. No escribe código ni toca la memoria de `game-planner`. Las specs se implementan con `/spec-impl` pasando la ruta completa.
-- Agente `skin-designer` (`.claude/agents/skin-designer.md`) — recibe el `id` de un juego y garantiza que tenga al menos las skins `neon`, `retro`, `clasico` y `pastel`; si faltan, las implementa en `games/<id>/skins.ts` (la primera vez monta la extensión E4: `SkinId`, `setSkin`, `GAME_SKINS` y selector en `GamePlayer`). Su memoria está en `references/games-with-themes.md`.
-- Agente `mobile-porter` (`.claude/agents/mobile-porter.md`) — recibe el `id` de un juego nuevo con motor y lo hace jugable en el navegador del móvil siguiendo la SPEC 10: crea `games/<id>/touch.ts`, lo registra en `GAME_TOUCH`, añade deslizar/arrastre si es el gesto natural (solo toca el motor para pasar de ratón a puntero) y verifica con Playwright en emulación táctil (vertical, horizontal y 360 px) y en escritorio. Su memoria está en `references/games-with-touch.md`.
 - `/frontend-design` — úsala siempre para diseñar interfaz de usuario. Las maquetas de referencia de la UI están en `references/Templates/`.
+
+## Agentes
+
+Definiciones en `.claude/agents/`; consulta el archivo de cada uno para el detalle.
+
+- [`game-planner`](.claude/agents/game-planner.md) — propone y elige el próximo juego. Memoria: `references/game-suggestions-todo.md`.
+- [`game-jam`](.claude/agents/game-jam.md) — diseña un juego original a partir de un tema y escribe sus specs en `specs/game-jam/<id>/`. No escribe código.
+- [`skin-designer`](.claude/agents/skin-designer.md) — garantiza las skins `neon`, `retro`, `clasico` y `pastel` de un juego. Memoria: `references/games-with-themes.md`.
+- [`mobile-porter`](.claude/agents/mobile-porter.md) — hace jugable un juego en el móvil (pad táctil y gestos, SPEC 10). Memoria: `references/games-with-touch.md`.
+
+Rutina en la nube `game-jam-nocturno` (gestión con `/schedule`): de lunes a viernes a las 2:00 (Ciudad de México) invoca `game-jam` con la siguiente sugerencia pendiente y sube la rama `game-jam-<id>`, sin PR.
 
 ## Problemas conocidos
 
@@ -94,6 +101,7 @@ Solo las lee `lib/supabase/env.ts`, que lanza un error con el nombre de la varia
 - `next.config.ts` habilita flags que cambian el modelo de render/caché:
   - `cacheComponents: true` — Cache Components / PPR; el contenido dinámico debe ir dentro de `<Suspense>` y el cacheo se declara explícitamente (`"use cache"`).
   - `partialPrefetching: true` y `experimental.agentFeedback: true`.
+  - `allowedDevOrigins: ['192.168.1.71']` — permite abrir `npm run dev` desde el móvil en la red local.
 - **Tailwind CSS v4** cargado vía el loader `@tailwindcss/turbopack` (regla `*.css` en `turbopack.rules`), no vía PostCSS. Los tokens de tema se definen en `app/globals.css` con `@theme inline`; no existe `tailwind.config.*`.
 - Los tipos de props de rutas son globales y generados (p. ej. `LayoutProps<"/">` en `app/layout.tsx`); no se importan.
 - Alias de imports: `@/*` → raíz del repo.
