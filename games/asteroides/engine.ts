@@ -33,6 +33,8 @@ import {
   PowerUp,
   Ship,
   dist,
+  drawAsteroids,
+  drawBullets,
   rand,
 } from "./entities";
 import { SKINS, type Skin } from "./skins";
@@ -207,9 +209,9 @@ function drawWorld(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
   ctx.fillStyle = skin.palette.background;
   ctx.fillRect(0, 0, W, H);
   state.particles.forEach((p) => p.draw(ctx, skin));
-  state.asteroids.forEach((a) => a.draw(ctx, skin));
+  drawAsteroids(ctx, state.asteroids, skin);
   state.powerUps.forEach((p) => p.draw(ctx, skin));
-  state.bullets.forEach((b) => b.draw(ctx, skin));
+  drawBullets(ctx, state.bullets, skin);
   state.ship.draw(ctx, skin);
   ctx.shadowBlur = 0;
 }

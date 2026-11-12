@@ -555,12 +555,65 @@ function drawTurtles(
   }
   ctx.restore();
 }
-function drawEntities(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+/**
+ * Sprites de vehículos con brillo, uno por tipo, longitud, color y sentido. El
+ * `shadowBlur` se paga una vez al crearlos y no en cada frame. Se vacían al cambiar de skin.
+ */
+type SpriteCache = {
+  skin: Skin | null;
+  sprites: Map<string, HTMLCanvasElement>;
+};
+/** Margen alrededor del vehículo para que el brillo no se recorte. */
+const spritePad = (skin: Skin) => Math.ceil(skin.glow.vehicle * 2) + 2;
+function vehicleSprite(
+  cache: SpriteCache,
+  skin: Skin,
+  e: Entity,
+  dir: 1 | -1,
+): HTMLCanvasElement | null {
+  if (cache.skin !== skin) {
+    cache.sprites.clear();
+    cache.skin = skin;
+  }
+  const key = `${e.type}:${e.width}:${e.variant ?? 0}:${dir}`;
+  const cached = cache.sprites.get(key);
+  if (cached) return cached;
+  const pad = spritePad(skin);
+  const sprite = document.createElement("canvas");
+  sprite.width = e.width * CELL + pad * 2;
+  sprite.height = CELL + pad * 2;
+  const sctx = sprite.getContext("2d");
+  if (!sctx) return null;
+  sctx.translate(pad, pad);
+  const proto: Entity = { ...e, col: 0 };
+  if (e.type === "car") drawCar(sctx, skin, proto, 0, dir);
+  else drawTruck(sctx, skin, proto, 0, dir);
+  cache.sprites.set(key, sprite);
+  return sprite;
+}
+function drawEntities(
+  ctx: CanvasRenderingContext2D,
+  state: State,
+  skin: Skin,
+  cache: SpriteCache,
+) {
+  // Solo compensa con brillo: sin él, el vector es barato y RETRO no se suaviza al escalar.
+  const useSprites = skin.glow.vehicle > 0;
+  const pad = spritePad(skin);
   for (const lane of state.lanes) {
     for (const e of lane.entities) {
-      if (e.type === "car") drawCar(ctx, skin, e, lane.row, lane.dir);
-      else if (e.type === "truck") drawTruck(ctx, skin, e, lane.row, lane.dir);
-      else if (e.type === "log") drawLog(ctx, skin, e, lane.row);
+      if (e.type === "car" || e.type === "truck") {
+        const sprite = useSprites
+          ? vehicleSprite(cache, skin, e, lane.dir)
+          : null;
+        if (sprite) {
+          ctx.drawImage(sprite, cellX(e.col) - pad, cellY(lane.row) - pad);
+        } else if (e.type === "car") {
+          drawCar(ctx, skin, e, lane.row, lane.dir);
+        } else {
+          drawTruck(ctx, skin, e, lane.row, lane.dir);
+        }
+      } else if (e.type === "log") drawLog(ctx, skin, e, lane.row);
       else drawTurtles(ctx, skin, e, lane.row);
     }
   }
@@ -650,10 +703,67 @@ function drawFrog(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
     false,
   );
 }
-/** Fondo, barra de tiempo y tablero (lo que se pixela en RETRO). */
-function drawWorld(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
+/** Fondo y zonas del tablero (río, carretera, filas seguras y bocas): todo lo que no se mueve. */
+function paintStatic(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
   ctx.fillStyle = skin.palette.bg;
   ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(BOARD_X, BOARD_Y);
+  ctx.beginPath();
+  ctx.rect(0, 0, BOARD_W, BOARD_H);
+  ctx.clip();
+  drawZones(ctx, state, skin);
+  ctx.restore();
+}
+/**
+ * Capa con el fondo fijo, a la resolución del lienzo de destino (800×600 o
+ * 400×300 en RETRO). Solo se repinta si cambian la skin o las bocas ocupadas.
+ */
+type StaticLayer = {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  skin: Skin | null;
+  goals: string;
+};
+function createStaticLayer(w: number, h: number): StaticLayer | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  return ctx ? { canvas, ctx, skin: null, goals: "" } : null;
+}
+function staticCanvas(
+  layer: StaticLayer,
+  state: State,
+  skin: Skin,
+): HTMLCanvasElement {
+  const goals = state.goals.map(Number).join("");
+  if (layer.skin !== skin || layer.goals !== goals) {
+    layer.ctx.setTransform(
+      layer.canvas.width / W,
+      0,
+      0,
+      layer.canvas.height / H,
+      0,
+      0,
+    );
+    paintStatic(layer.ctx, state, skin);
+    layer.skin = skin;
+    layer.goals = goals;
+  }
+  return layer.canvas;
+}
+/** Fondo, barra de tiempo y tablero (lo que se pixela en RETRO). */
+function drawWorld(
+  ctx: CanvasRenderingContext2D,
+  state: State,
+  skin: Skin,
+  layer: StaticLayer | null,
+  sprites: SpriteCache,
+) {
+  // La capa tiene la resolución del destino: se copia 1:1.
+  if (layer) ctx.drawImage(staticCanvas(layer, state, skin), 0, 0, W, H);
+  else paintStatic(ctx, state, skin);
   drawTimeBar(ctx, state, skin);
   ctx.save();
   ctx.translate(BOARD_X, BOARD_Y);
@@ -661,8 +771,7 @@ function drawWorld(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
   ctx.beginPath();
   ctx.rect(0, 0, BOARD_W, BOARD_H);
   ctx.clip();
-  drawZones(ctx, state, skin);
-  drawEntities(ctx, state, skin);
+  drawEntities(ctx, state, skin, sprites);
   drawFrog(ctx, state, skin);
   ctx.restore();
 }
@@ -691,12 +800,21 @@ function drawTexts(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
 }
 /** Lienzo a media resolución para RETRO, creado en la factory. */
 type LowRes = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D };
+/** Lienzos auxiliares de la instancia, creados en la factory (nunca al importar el módulo). */
+type Gfx = {
+  low: LowRes | null;
+  /** Fondo fijo a resolución completa y a la de `low` (RETRO). */
+  bgFull: StaticLayer | null;
+  bgLow: StaticLayer | null;
+  sprites: SpriteCache;
+};
 function draw(
   ctx: CanvasRenderingContext2D,
   state: State,
   skin: Skin,
-  low: LowRes | null,
+  gfx: Gfx,
 ) {
+  const { low } = gfx;
   if (skin.pixelated && low) {
     low.ctx.setTransform(
       low.canvas.width / W,
@@ -706,13 +824,13 @@ function draw(
       0,
       0,
     );
-    drawWorld(low.ctx, state, skin);
+    drawWorld(low.ctx, state, skin, gfx.bgLow, gfx.sprites);
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(low.canvas, 0, 0, W, H);
     ctx.restore();
   } else {
-    drawWorld(ctx, state, skin);
+    drawWorld(ctx, state, skin, gfx.bgFull, gfx.sprites);
   }
   drawTexts(ctx, state, skin);
 }
@@ -731,6 +849,14 @@ export const createRanariaGame: GameFactory = (
   lowCanvas.height = H / 2;
   const lowCtx = lowCanvas.getContext("2d");
   const low: LowRes | null = lowCtx ? { canvas: lowCanvas, ctx: lowCtx } : null;
+  const gfx: Gfx = {
+    low,
+    bgFull: createStaticLayer(W, H),
+    bgLow: createStaticLayer(lowCanvas.width, lowCanvas.height),
+    sprites: { skin: null, sprites: new Map() },
+  };
+  // En "waiting" nada se mueve: basta con un frame hasta que cambie la skin o se reinicie.
+  let waitingDrawn = false;
   let state = createState();
   let rafId: number | null = null;
   let lastTime: number | null = null;
@@ -771,7 +897,9 @@ export const createRanariaGame: GameFactory = (
     const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, MAX_DT);
     lastTime = ts;
     update(state, dt);
-    draw(ctx, state, skin, low);
+    const waiting = state.phase === "waiting";
+    if (!waiting || !waitingDrawn) draw(ctx, state, skin, gfx);
+    waitingDrawn = waiting;
     sync();
     if (state.phase === "gameover") return;
     rafId = requestAnimationFrame(loop);
@@ -803,7 +931,7 @@ export const createRanariaGame: GameFactory = (
     state.pendingDir = dir;
   };
   window.addEventListener("keydown", onKeyDown);
-  draw(ctx, state, skin, low);
+  draw(ctx, state, skin, gfx);
   emitStats();
   start();
   return {
@@ -824,15 +952,17 @@ export const createRanariaGame: GameFactory = (
       state = createState();
       lastStats = null;
       gameOverNotified = false;
-      draw(ctx, state, skin, low);
+      waitingDrawn = false;
+      draw(ctx, state, skin, gfx);
       emitStats();
       start();
     },
     setSkin(id: SkinId) {
       if (destroyed) return;
       skin = SKINS[id];
+      waitingDrawn = false;
       // Con el bucle parado (pausa o fin) se redibuja ya; en juego lo hace el siguiente frame.
-      if (rafId === null) draw(ctx, state, skin, low);
+      if (rafId === null) draw(ctx, state, skin, gfx);
     },
     destroy() {
       if (destroyed) return;
