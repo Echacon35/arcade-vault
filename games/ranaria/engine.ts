@@ -20,6 +20,7 @@ import {
   JUMP_MS,
   MAX_DT,
   POINTS_GOAL,
+  POINTS_ROUND,
   POINTS_STEP,
   POINTS_TIME_PER_SEC,
   ROW_GOALS,
@@ -187,8 +188,15 @@ function resetCrossing(state: State) {
 function killFrog(state: State) {
   resetCrossing(state);
 }
-/** Ronda completada (paso 6: siguiente nivel). */
+/**
+ * Ronda completada (5 bocas): +200, bocas vacías, nivel siguiente con carriles
+ * más rápidos y cruce nuevo con menos tiempo. `onStats` avisa del nivel.
+ */
 function completeRound(state: State) {
+  state.score += POINTS_ROUND;
+  state.goals = GOAL_COLS.map(() => false);
+  state.level += 1;
+  state.lanes = buildLanes(state.level);
   resetCrossing(state);
 }
 /** Ocupa la boca `index`: +50, bonus de tiempo y, si era la quinta, fin de ronda. */
