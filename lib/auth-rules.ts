@@ -6,6 +6,8 @@
  */
 /** Alias del jugador: mismo formato que `scores.player_name`. */
 export const ALIAS_RE = /^[A-Z0-9_]{1,10}$/;
+/** Formato básico de correo; la validación real la hace Supabase al enviar. */
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Longitud mínima de contraseña (igual que en Supabase Auth). */
 export const MIN_PASSWORD = 8;
 /** Destino por defecto tras iniciar sesión o confirmar el correo. */
