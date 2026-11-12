@@ -218,22 +218,25 @@ function drawSnake(ctx: CanvasRenderingContext2D, state: State, skin: Skin) {
   ctx.shadowBlur = glow.snake;
   ctx.strokeStyle = palette.snakeStroke;
   ctx.lineWidth = outlineWidth;
-  // De la cola a la cabeza, para que la cabeza quede encima.
-  for (let i = state.snake.length - 1; i >= 0; i--) {
+  // Los segmentos no se solapan (margen de SEGMENT_INSET): el cuerpo va en un único
+  // trazado y el brillo se calcula una vez, no una por segmento. La cabeza va después, encima.
+  const traceSegment = (i: number) => {
     const { col, row } = state.snake[i];
     const x = col * CELL + SEGMENT_INSET;
     const y = row * CELL + SEGMENT_INSET;
-    ctx.fillStyle = i === 0 ? palette.head : palette.snake;
-    if (cornerRadius > 0) {
-      ctx.beginPath();
-      ctx.roundRect(x, y, size, size, cornerRadius);
-      ctx.fill();
-      if (outlineWidth > 0) ctx.stroke();
-    } else {
-      ctx.fillRect(x, y, size, size);
-      if (outlineWidth > 0) ctx.strokeRect(x, y, size, size);
-    }
-  }
+    if (cornerRadius > 0) ctx.roundRect(x, y, size, size, cornerRadius);
+    else ctx.rect(x, y, size, size);
+  };
+  ctx.beginPath();
+  for (let i = state.snake.length - 1; i >= 1; i--) traceSegment(i);
+  ctx.fillStyle = palette.snake;
+  ctx.fill();
+  if (outlineWidth > 0) ctx.stroke();
+  ctx.beginPath();
+  traceSegment(0);
+  ctx.fillStyle = palette.head;
+  ctx.fill();
+  if (outlineWidth > 0) ctx.stroke();
   ctx.restore();
   // Ojos orientados en la dirección de avance.
   const head = state.snake[0];
