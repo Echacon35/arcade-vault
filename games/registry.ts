@@ -1,5 +1,6 @@
 import { createAsteroidsGame } from "./asteroides/engine";
 import { ASTEROIDES_TOUCH } from "./asteroides/touch";
+import { createRanariaGame } from "./ranaria/engine";
 import { createReboteGame } from "./rebote/engine";
 import { REBOTE_TOUCH } from "./rebote/touch";
 import { SKIN_IDS } from "./shared/skins";
@@ -15,6 +16,7 @@ export const GAME_ENGINES: Partial<Record<string, GameFactory>> = {
   tetra: createTetraGame,
   rebote: createReboteGame,
   viborita: createViboritaGame,
+  ranaria: createRanariaGame,
 };
 /** E4: skins que soporta cada motor. Un juego fuera de este mapa no muestra selector. */
 export const GAME_SKINS: Partial<Record<string, readonly SkinId[]>> = {

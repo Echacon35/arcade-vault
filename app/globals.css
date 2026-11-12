@@ -1199,6 +1199,151 @@
     filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.8))
       drop-shadow(0 0 14px rgba(0, 255, 136, 0.35));
   }
+  /*
+ * RANARIA: el tablero visto desde arriba, 12 filas (--u = 1/12 de la altura,
+ * como .cover-viborita). Fila 0: muro con tres bocas doradas; filas 1–5: río
+ * con troncos; fila 6: mediana con la rana neón en el centro; filas 7–10:
+ * carretera con coches y su estela; fila 11: salida. La rana es lo único que
+ * brilla de verdad; el resto va apagado.
+ */
+  .cover-ranaria {
+    container-type: size;
+    --u: calc(100cqh / 12);
+    --frog: #39ff14;
+    --frog-dark: #1a8f0a;
+    --log: #b8662e;
+    --log-dark: #6e3415;
+    background: linear-gradient(
+      180deg,
+      #0d3d18 0 8.333%,
+      #021530 8.333% 50%,
+      #0a2a12 50% 58.333%,
+      #05050a 58.333% 91.667%,
+      #0a2a12 91.667% 100%
+    );
+  }
+  .cover-ranaria::before,
+  .cover-ranaria::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  /* Bocas, troncos, líneas de carril y coches con estela. */
+  .cover-ranaria::before {
+    background:
+      linear-gradient(#03130a, #03130a) calc(50cqw - 4.35 * var(--u))
+        calc(0.25 * var(--u)) / calc(1.7 * var(--u)) calc(0.6 * var(--u)),
+      linear-gradient(#03130a, #03130a) calc(50cqw - 0.85 * var(--u))
+        calc(0.25 * var(--u)) / calc(1.7 * var(--u)) calc(0.6 * var(--u)),
+      linear-gradient(#03130a, #03130a) calc(50cqw + 2.65 * var(--u))
+        calc(0.25 * var(--u)) / calc(1.7 * var(--u)) calc(0.6 * var(--u)),
+      linear-gradient(var(--yellow), var(--yellow))
+        calc(50cqw - 4.45 * var(--u)) calc(0.15 * var(--u)) /
+        calc(1.9 * var(--u)) calc(0.8 * var(--u)),
+      linear-gradient(var(--yellow), var(--yellow))
+        calc(50cqw - 0.95 * var(--u)) calc(0.15 * var(--u)) /
+        calc(1.9 * var(--u)) calc(0.8 * var(--u)),
+      linear-gradient(var(--yellow), var(--yellow))
+        calc(50cqw + 2.55 * var(--u)) calc(0.15 * var(--u)) /
+        calc(1.9 * var(--u)) calc(0.8 * var(--u)),
+      linear-gradient(180deg, var(--log), var(--log-dark))
+        calc(50cqw - 6.5 * var(--u)) calc(2.2 * var(--u)) / calc(4 * var(--u))
+        calc(0.6 * var(--u)),
+      linear-gradient(180deg, var(--log), var(--log-dark))
+        calc(50cqw + 1.2 * var(--u)) calc(2.2 * var(--u)) / calc(3 * var(--u))
+        calc(0.6 * var(--u)),
+      linear-gradient(180deg, var(--log), var(--log-dark))
+        calc(50cqw - 2.4 * var(--u)) calc(4.2 * var(--u)) / calc(5 * var(--u))
+        calc(0.6 * var(--u)),
+      linear-gradient(var(--magenta), var(--magenta)) calc(50cqw + 2 * var(--u))
+        calc(7.25 * var(--u)) / calc(1.2 * var(--u)) calc(0.5 * var(--u)),
+      linear-gradient(90deg, transparent, rgba(255, 0, 110, 0.45))
+        calc(50cqw - 1 * var(--u)) calc(7.35 * var(--u)) / calc(3 * var(--u))
+        calc(0.3 * var(--u)),
+      linear-gradient(var(--cyan), var(--cyan)) calc(50cqw - 5 * var(--u))
+        calc(9.2 * var(--u)) / calc(2.4 * var(--u)) calc(0.6 * var(--u)),
+      linear-gradient(270deg, transparent, rgba(0, 245, 255, 0.4))
+        calc(50cqw - 2.6 * var(--u)) calc(9.35 * var(--u)) / calc(3 * var(--u))
+        calc(0.3 * var(--u)),
+      linear-gradient(var(--yellow), var(--yellow)) calc(50cqw + 4.2 * var(--u))
+        calc(10.25 * var(--u)) / calc(1.2 * var(--u)) calc(0.5 * var(--u)),
+      repeating-linear-gradient(
+          90deg,
+          rgba(245, 255, 0, 0.35) 0 calc(0.6 * var(--u)),
+          transparent calc(0.6 * var(--u)) calc(1.2 * var(--u))
+        )
+        0 calc(8 * var(--u)) / 100% 2px,
+      repeating-linear-gradient(
+          90deg,
+          rgba(245, 255, 0, 0.35) 0 calc(0.6 * var(--u)),
+          transparent calc(0.6 * var(--u)) calc(1.2 * var(--u))
+        )
+        0 calc(9 * var(--u)) / 100% 2px,
+      repeating-linear-gradient(
+          90deg,
+          rgba(245, 255, 0, 0.35) 0 calc(0.6 * var(--u)),
+          transparent calc(0.6 * var(--u)) calc(1.2 * var(--u))
+        )
+        0 calc(10 * var(--u)) / 100% 2px;
+    background-repeat: no-repeat;
+  }
+  /* Rana en la mediana (fila 6), mirando al río: pupilas, ojos, cuerpo y patas. */
+  .cover-ranaria::after {
+    background:
+      radial-gradient(
+        circle at calc(50% - 0.22 * var(--u)) calc(6.08 * var(--u)),
+        #000 0 calc(0.06 * var(--u)),
+        transparent calc(0.06 * var(--u) + 1px)
+      ),
+      radial-gradient(
+        circle at calc(50% + 0.22 * var(--u)) calc(6.08 * var(--u)),
+        #000 0 calc(0.06 * var(--u)),
+        transparent calc(0.06 * var(--u) + 1px)
+      ),
+      radial-gradient(
+        circle at calc(50% - 0.22 * var(--u)) calc(6.12 * var(--u)),
+        var(--ink) 0 calc(0.14 * var(--u)),
+        transparent calc(0.14 * var(--u) + 1px)
+      ),
+      radial-gradient(
+        circle at calc(50% + 0.22 * var(--u)) calc(6.12 * var(--u)),
+        var(--ink) 0 calc(0.14 * var(--u)),
+        transparent calc(0.14 * var(--u) + 1px)
+      ),
+      radial-gradient(
+        ellipse calc(0.36 * var(--u)) calc(0.42 * var(--u)) at 50%
+          calc(6.5 * var(--u)),
+        var(--frog) 0 95%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse calc(0.18 * var(--u)) calc(0.1 * var(--u)) at
+          calc(50% - 0.45 * var(--u)) calc(6.15 * var(--u)),
+        var(--frog-dark) 0 95%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse calc(0.18 * var(--u)) calc(0.1 * var(--u)) at
+          calc(50% + 0.45 * var(--u)) calc(6.15 * var(--u)),
+        var(--frog-dark) 0 95%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse calc(0.2 * var(--u)) calc(0.11 * var(--u)) at
+          calc(50% - 0.45 * var(--u)) calc(6.85 * var(--u)),
+        var(--frog-dark) 0 95%,
+        transparent
+      ),
+      radial-gradient(
+        ellipse calc(0.2 * var(--u)) calc(0.11 * var(--u)) at
+          calc(50% + 0.45 * var(--u)) calc(6.85 * var(--u)),
+        var(--frog-dark) 0 95%,
+        transparent
+      );
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.8))
+      drop-shadow(0 0 14px rgba(57, 255, 20, 0.35));
+  }
   .cover-rana {
     background: linear-gradient(180deg, #001f2a, #0a0a18);
   }
