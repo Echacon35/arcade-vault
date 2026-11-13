@@ -1,6 +1,6 @@
 # SPEC 17 — Cerrar la redirección abierta de `safeNext` y limitar el INSERT de `scores`
 
-> **Estado:** Aprobada
+> **Estado:** mplementado
 > **Depende de:** SPEC 06, SPEC 12, SPEC 14, SPEC 16
 > **Fecha:** 2026-11-13
 > **Objetivo:** Que `safeNext` no devuelva nunca un destino `//host` (SEC-009) y que `anon` y `authenticated` solo puedan insertar en las columnas previstas de `scores` (SEC-010).
