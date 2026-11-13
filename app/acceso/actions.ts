@@ -164,6 +164,30 @@ export async function updatePasswordAction(input: {
     return fail("unknown");
   }
 }
+/**
+ * Guarda `user_metadata.alias` de la sesión actual (SPEC 13): es el paso
+ * obligatorio tras el primer acceso por OAuth. Exige sesión y un alias válido.
+ */
+export async function saveAliasAction(input: {
+  alias: string;
+}): Promise<AuthResult> {
+  const alias =
+    typeof input?.alias === "string" ? input.alias.trim().toUpperCase() : "";
+  if (!ALIAS_RE.test(alias)) return fail("invalid_input");
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return fail("no_session");
+    const { error } = await supabase.auth.updateUser({ data: { alias } });
+    if (error) return report("saveAliasAction", error);
+    return OK;
+  } catch (err) {
+    console.error("[saveAliasAction] error inesperado:", err);
+    return fail("unknown");
+  }
+}
 /** Cierra la sesión en este navegador (las de otros dispositivos siguen abiertas). */
 export async function signOutAction(): Promise<AuthResult> {
   try {
