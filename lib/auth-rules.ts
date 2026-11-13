@@ -55,6 +55,21 @@ export function suggestAlias(
   const alias = raw ? normalizeAlias(raw) : "";
   return ALIAS_RE.test(alias) ? alias : FALLBACK_ALIAS;
 }
+/**
+ * Iniciales para el avatar de respaldo (SPEC 15). Con `_`, la primera letra
+ * de las dos primeras partes no vacías (PX_KAI → "PK", _X_ → "X"); sin `_`,
+ * los dos primeros caracteres (NEONFOX → "NE", A → "A"). Máx. 2, en mayúsculas.
+ */
+export function aliasInitials(alias: string): string {
+  const upper = alias.toUpperCase();
+  if (!upper.includes("_")) return upper.slice(0, 2);
+  return upper
+    .split("_")
+    .filter((part) => part !== "")
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
+}
 /** Destino por defecto tras iniciar sesión o confirmar el correo. */
 export const DEFAULT_NEXT = "/juegos";
 /** Origen ficticio para resolver rutas relativas sin depender del host real. */

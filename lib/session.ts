@@ -15,6 +15,8 @@ export type SessionUser = {
   hasAlias: boolean;
   /** Propuesta para /acceso/alias, calculada con `suggestAlias(user_metadata)`. */
   aliasSuggestion: string;
+  /** Foto del proveedor (`avatar_url` o `picture`), solo si es https; si no, null (SPEC 15). */
+  avatarUrl: string | null;
 };
 export type SessionSnapshot = {
   /** false hasta la primera lectura de la sesión. */
@@ -27,6 +29,16 @@ const SERVER_SNAPSHOT: SessionSnapshot = { ready: false, user: null };
 let snapshot: SessionSnapshot = SERVER_SNAPSHOT;
 let started = false;
 const listeners = new Set<() => void>();
+/** Primera URL https entre `avatar_url` (GitHub y Google) y `picture` (Google); si no, null. */
+function avatarFrom(metadata: Record<string, unknown>): string | null {
+  for (const value of [metadata.avatar_url, metadata.picture]) {
+    if (typeof value !== "string") continue;
+    try {
+      if (new URL(value).protocol === "https:") return value;
+    } catch {}
+  }
+  return null;
+}
 function toSessionUser(user: User | null | undefined): SessionUser | null {
   if (!user) return null;
   const metadata: Record<string, unknown> = user.user_metadata ?? {};
@@ -38,6 +50,7 @@ function toSessionUser(user: User | null | undefined): SessionUser | null {
     name: hasAlias ? alias : FALLBACK_ALIAS,
     hasAlias,
     aliasSuggestion: suggestAlias(metadata, user.email),
+    avatarUrl: avatarFrom(metadata),
   };
 }
 const sameUser = (a: SessionUser | null, b: SessionUser | null) =>
@@ -48,7 +61,8 @@ const sameUser = (a: SessionUser | null, b: SessionUser | null) =>
     a.email === b.email &&
     a.name === b.name &&
     a.hasAlias === b.hasAlias &&
-    a.aliasSuggestion === b.aliasSuggestion);
+    a.aliasSuggestion === b.aliasSuggestion &&
+    a.avatarUrl === b.avatarUrl);
 /** Publica un usuario nuevo solo si cambia algo, para no re-renderizar en vano. */
 function publish(user: SessionUser | null) {
   if (snapshot.ready && sameUser(snapshot.user, user)) return;
