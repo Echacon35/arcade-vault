@@ -114,7 +114,10 @@ function AccountMenu({
           <UserAvatar name={alias} avatarUrl={avatarUrl} size={28} />
           {alias} ▾
         </span>
-        <AccountGlyph />
+        {/* Hasta 1100 px: la foto de 40 px sustituye al icono pixel-art (SPEC 15). */}
+        <span className="auth-btn-compact">
+          <UserAvatar name={alias} avatarUrl={avatarUrl} size={40} />
+        </span>
       </button>
       {open && (
         <div id={menuId} className="account-menu">
@@ -220,8 +223,17 @@ function NavBar({ active }: { active: Section | null }) {
         {ready &&
           (user ? (
             <div className="mobile-account">
-              <div className="pixel neon-cyan text-[11px]">{user.name}</div>
-              <div className="account-email">{user.email}</div>
+              <div className="account-head">
+                <UserAvatar
+                  name={user.name}
+                  avatarUrl={user.avatarUrl}
+                  size={48}
+                />
+                <div className="account-head-text">
+                  <div className="pixel neon-cyan text-[11px]">{user.name}</div>
+                  <div className="account-email">{user.email}</div>
+                </div>
+              </div>
               <button
                 type="button"
                 className="btn magenta w-full"

@@ -390,6 +390,10 @@
       padding: 6px 16px 6px 6px;
     }
   }
+  /* Foto compacta del botón de cuenta: oculta en escritorio, visible a ≤ 1100 px (SPEC 15). */
+  .av-nav .auth-btn .auth-btn-compact {
+    display: none;
+  }
   /* Cabecera del menú de cuenta: foto de 48 px junto al alias y el correo. */
   .account-head {
     display: flex;
@@ -456,10 +460,15 @@
       color: var(--ink-faint);
       border-color: var(--line);
     }
+    /* SPEC 15: con sesión el botón es la foto de 40 px; el borde y el brillo los pone el círculo. */
     .av-nav .auth-btn.has-session {
       color: var(--cyan);
-      border-color: var(--cyan);
-      filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.55));
+      border-color: transparent;
+      background: transparent;
+      clip-path: none;
+    }
+    .av-nav .auth-btn .auth-btn-compact {
+      display: inline-flex;
     }
     .av-nav .auth-btn .auth-btn-text {
       display: none;
