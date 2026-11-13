@@ -35,6 +35,27 @@ function NavWithPathname() {
  * con clic fuera y con Esc (el foco vuelve al botón). Al cerrar sesión no se
  * cambia de página.
  */
+/**
+ * Icono de cuenta en pixel-art (12×12), SPEC 13. Solo se ve a ≤ 960 px, donde
+ * sustituye al texto del botón de cuenta; el color lo pone el botón (`currentColor`).
+ */
+function AccountGlyph() {
+  return (
+    <svg
+      className="account-glyph"
+      viewBox="0 0 12 12"
+      width="18"
+      height="18"
+      aria-hidden
+      shapeRendering="crispEdges"
+    >
+      <path
+        fill="currentColor"
+        d="M4 1h4v1h1v3H8v1H4V5H3V2h1zM2 8h8v1h1v2H1V9h1z"
+      />
+    </svg>
+  );
+}
 function AccountMenu({ alias, email }: { alias: string; email: string }) {
   const { logout } = useSession();
   const [open, setOpen] = useState(false);
@@ -72,16 +93,19 @@ function AccountMenu({ alias, email }: { alias: string; email: string }) {
     <div className="account" ref={rootRef}>
       <button
         ref={buttonRef}
-        className="btn ghost auth-btn"
+        className="btn ghost auth-btn has-session"
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-label={`Cuenta de ${alias}`}
         onClick={() => setOpen((o) => !o)}
       >
-        {alias} ▾
+        <span className="auth-btn-text">{alias} ▾</span>
+        <AccountGlyph />
       </button>
       {open && (
         <div id={menuId} className="account-menu">
+          <div className="account-alias pixel neon-cyan">{alias}</div>
           <div className="account-email">{email}</div>
           <button
             type="button"
@@ -139,8 +163,10 @@ function NavBar({ active }: { active: Section | null }) {
             <button
               className="btn auth-btn"
               onClick={() => router.push("/acceso")}
+              aria-label="Iniciar sesión"
             >
-              Iniciar Sesión
+              <span className="auth-btn-text">Iniciar Sesión</span>
+              <AccountGlyph />
             </button>
           ))}
         <button

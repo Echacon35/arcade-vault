@@ -44,12 +44,14 @@ Además, la QA de la SPEC 12 detectó un **desbordamiento horizontal de 6 px** e
   - Sin sesión, redirige a `/acceso`. Con un alias ya válido, redirige a `safeNext(next)`.
 - **Alias obligatorio en toda la app:** mientras haya sesión sin alias válido, cualquier página redirige a `/acceso/alias?next=<ruta actual>`. Las excepciones son `/acceso/alias` y las rutas `/auth/*`.
 - **Vinculación con cuentas de correo:** si un jugador de la SPEC 12 entra con Google o GitHub usando el mismo correo verificado, Supabase añade la identidad a su cuenta. Conserva su alias y no ve la pantalla de alias.
-- **Nav en móvil (≤ 840 px):**
+- **Nav en móvil y escritorio estrecho (≤ 960 px):**
   - El botón con texto (`Iniciar Sesión` / `ALIAS ▾`) se sustituye por un **icono de cuenta** cuadrado.
   - **Sin sesión:** el icono va en tono apagado, lleva a `/acceso` y tiene `aria-label="Iniciar sesión"`.
   - **Con sesión:** el icono va en cian con brillo, abre el mismo menú de cuenta y tiene `aria-label="Cuenta de <ALIAS>"`.
   - Con el icono, la barra cabe sin desbordar a 360 y 390 px.
-  - En escritorio (> 840 px) se mantienen `Iniciar Sesión` y `ALIAS ▾`.
+  - En escritorio (> 960 px) se mantienen `Iniciar Sesión` y `ALIAS ▾`.
+  - _Ampliado durante la implementación (2026-11-13):_ el corte pasa de 840 a 960 px, porque entre 841 y ~920 px el nav con texto (enlaces, `CRÉDITOS · 03` y botón de cuenta) también desbordaba.
+- **Tarjetas de actividad de la landing** (_ampliado durante la implementación, 2026-11-13_): `.activity-card` desbordaba 12 px en `/` a 360 px, porque la columna `1fr` crecía hasta el contenido. Pasa a `minmax(0, 1fr)`, y las filas del ticker se compactan a ≤ 400 px.
 - **Menú de cuenta:** muestra el alias además del correo, porque en móvil el icono no lo lleva. Es el mismo componente en los dos tamaños.
 - **Documentación:** `CLAUDE.md` refleja OAuth, `/auth/callback`, `/acceso/alias`, el guardián de alias y la configuración manual de los proveedores.
 
@@ -64,6 +66,7 @@ Además, la QA de la SPEC 12 detectó un **desbordamiento horizontal de 6 px** e
 - Foco de teclado poco visible en los botones `.btn` (estilo global, detectado en la QA de la SPEC 12).
 - Glifo «▸» y «Ó» de la fuente pixel.
 - Publicar la pantalla de consentimiento de Google (se queda en modo de prueba, ver «Riesgos»).
+- Desbordamiento de `/salon` a 360 px (386 px de ancho) y de cualquier página a 320 px: detectados al medir el paso 8, no vienen del nav.
 
 ---
 
@@ -158,7 +161,7 @@ Componente nuevo: `components/alias-guard.tsx` (cliente, montado en `app/layout.
 6. **Crear `app/auth/callback/route.ts`**: `exchangeCodeForSession` con el cliente de `lib/supabase/server.ts`, comprobación del alias del usuario devuelto y redirección según «Alcance».
 7. **Añadir `signInWithOAuthAction`** (origen desde `headers()`, `redirectTo` = `<origen>/auth/callback?next=…`, `redirect(data.url)`) **y los botones** en `components/auth-form.tsx`, con el divisor, el estado deshabilitado y el aviso de `?error=oauth`. Comprobación: GITHUB y GOOGLE llevan a la pantalla del proveedor.
 8. **Icono de cuenta en `components/nav.tsx` y `app/globals.css`:**
-   - Icono SVG inline al estilo pixel del sitio, solo bajo 840 px; el botón con texto se oculta en ese tamaño.
+   - Icono SVG inline al estilo pixel del sitio, solo hasta 960 px; el botón con texto se oculta en ese tamaño.
    - El menú de cuenta añade el alias.
    - Comprobación: a 360 y 390 px, `document.documentElement.scrollWidth` es igual al ancho de la ventana.
 9. **Actualizar `CLAUDE.md`**: rutas `/auth/callback` y `/acceso/alias`, OAuth y guardián de alias en «Autenticación», configuración manual de los proveedores en «Supabase → Auth», y la nota de que Google está en modo de prueba.
@@ -182,8 +185,8 @@ Componente nuevo: `components/alias-guard.tsx` (cliente, montado en `app/layout.
 - [ ] Una cuenta de correo de la SPEC 12 que entra con Google con el mismo correo conserva su alias y no ve `/acceso/alias`.
 - [ ] `/acceso/alias` sin sesión redirige a `/acceso`.
 - [ ] A 360 px y a 390 px de ancho no hay scroll horizontal en `/`, `/juegos` ni `/acceso`, con y sin sesión.
-- [ ] A ≤ 840 px, sin sesión, el icono de cuenta lleva a `/acceso`. Con sesión, abre el menú con el alias, el correo y `CERRAR SESIÓN`.
-- [ ] A > 840 px se siguen viendo `Iniciar Sesión` / `<ALIAS> ▾` con texto.
+- [ ] A ≤ 960 px, sin sesión, el icono de cuenta lleva a `/acceso`. Con sesión, abre el menú con el alias, el correo y `CERRAR SESIÓN`.
+- [ ] A > 960 px se siguen viendo `Iniciar Sesión` / `<ALIAS> ▾` con texto.
 - [ ] El menú de cuenta muestra el alias en escritorio y en móvil.
 - [ ] Ningún componente de `components/` importa `@supabase/*` ni `lib/supabase/*`.
 
@@ -205,11 +208,14 @@ Componente nuevo: `components/alias-guard.tsx` (cliente, montado en `app/layout.
 - **Sí:** vinculación automática de identidades (comportamiento por defecto de Supabase). Un mismo correo verificado es la misma persona y conserva su alias.
 - **No:** cuentas separadas por proveedor. Confuso y duplicaría jugadores.
 - **Sí:** botones de OAuth en las dos pestañas. Con OAuth, registrarse y entrar son la misma acción.
-- **Sí:** icono de cuenta solo en móvil (≤ 840 px). Arregla el desbordamiento sin perder el alias visible en escritorio.
+- **Sí:** icono de cuenta solo en móvil y escritorio estrecho (≤ 960 px). Arregla el desbordamiento sin perder el alias visible en escritorio.
 - **No:** icono en todos los tamaños. Se perdería el alias en la barra de escritorio.
 - **No:** compactar la barra ni ocultar del todo el acceso a la cuenta en móvil. Opciones consideradas; el usuario eligió el icono.
 - **Sí:** el menú de cuenta muestra el alias en los dos tamaños. Un solo componente, y en móvil es el único sitio donde se ve.
 - **Sí:** el desbordamiento del nav va en esta spec y no en una propia, porque se toca el mismo componente. Decisión del usuario.
+- **Sí:** subir el corte del nav compacto a 960 px (decisión del usuario en el paso 8). Es un único cambio de media query.
+- **No:** ocultar `CRÉDITOS · 03` entre 841 y ~1000 px. Se valoró como alternativa al nuevo corte.
+- **Sí:** arreglar `.activity-card` de la landing aquí, para que el criterio de `/` a 360 px se cumpla tal como está escrito (decisión del usuario en el paso 8).
 - **No:** el foco de teclado de `.btn` en esta spec. Es un estilo global y va en otra.
 
 ---
