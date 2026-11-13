@@ -1,6 +1,6 @@
 # SPEC 16 — Medidas de seguridad básicas
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 04, SPEC 12, SPEC 14
 > **Fecha:** 2026-11-13
 > **Objetivo:** Cerrar el checklist de `references/security/security-checklist.md`: comprobar RLS, exigir contraseñas de 8 o más con minúscula, mayúscula, dígito y símbolo, limitar registros e inicios de sesión por IP, añadir cabeceras HTTP de seguridad y quitar el aviso del asesor sobre `rls_auto_enable()`.
