@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { AccountBadge } from "@/components/account-badge";
 import type { LeaderboardRow } from "@/lib/catalog";
 import type { Game } from "@/lib/games";
 export type HallEntry = { game: Game; rows: LeaderboardRow[] }; // rows: máx. 10, ordenadas por rank
@@ -34,7 +35,10 @@ export function HallOfFame({ entries }: { entries: HallEntry[] }) {
       <div className="podium">
         <div className="podium-slot silver">
           <div className="rank-num">02</div>
-          <div className="name">{silver?.name ?? EMPTY}</div>
+          <div className="name">
+            {silver?.name ?? EMPTY}
+            {silver?.hasAccount && <AccountBadge />}
+          </div>
           <div className="score">{formatScore(silver)}</div>
           <div className="date">{silver?.date ?? EMPTY}</div>
         </div>
@@ -43,13 +47,19 @@ export function HallOfFame({ entries }: { entries: HallEntry[] }) {
             CAMPEÓN
           </div>
           <div className="rank-num mt-1 text-[36px]">01</div>
-          <div className="name">{gold?.name ?? EMPTY}</div>
+          <div className="name">
+            {gold?.name ?? EMPTY}
+            {gold?.hasAccount && <AccountBadge />}
+          </div>
           <div className="score text-[20px]">{formatScore(gold)}</div>
           <div className="date">{gold?.date ?? EMPTY}</div>
         </div>
         <div className="podium-slot bronze">
           <div className="rank-num">03</div>
-          <div className="name">{bronze?.name ?? EMPTY}</div>
+          <div className="name">
+            {bronze?.name ?? EMPTY}
+            {bronze?.hasAccount && <AccountBadge />}
+          </div>
           <div className="score">{formatScore(bronze)}</div>
           <div className="date">{bronze?.date ?? EMPTY}</div>
         </div>
@@ -74,7 +84,10 @@ export function HallOfFame({ entries }: { entries: HallEntry[] }) {
               style={{ animationDelay: `${i * 50}ms` }}
             >
               <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-              <div className="pl">{r.name}</div>
+              <div className="pl">
+                {r.name}
+                {r.hasAccount && <AccountBadge />}
+              </div>
               <div className="sc">{r.score.toLocaleString("es-ES")}</div>
               <div className="dt">{r.date}</div>
             </div>

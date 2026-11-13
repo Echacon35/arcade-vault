@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { AccountBadge } from "@/components/account-badge";
 import { SignalLost } from "@/components/signal-lost";
 import { getCatalog, getCatalogGame, getLeaderboard } from "@/lib/catalog";
-
 /**
  * Ids de la tabla `games`. Con `cacheComponents` no se puede devolver un array
  * vacío, así que si Supabase falla en build se aborta con un error claro.
@@ -17,7 +17,6 @@ export async function generateStaticParams() {
   }
   return result.data.map((game) => ({ id: game.id }));
 }
-
 /**
  * Con `cacheComponents`, un id fuera de `generateStaticParams` se resuelve en
  * petición y el streaming ya empezó (Suspense del Nav). `notFound()` debe
@@ -30,7 +29,6 @@ export default function GameDetailPage({ params }: PageProps<"/juegos/[id]">) {
     </Suspense>
   );
 }
-
 async function GameDetail({
   params,
 }: Pick<PageProps<"/juegos/[id]">, "params">) {
@@ -39,25 +37,20 @@ async function GameDetail({
     getCatalogGame(id),
     getLeaderboard(id, 10),
   ]);
-
   if (!gameResult.ok) return <SignalLost />;
-
   const game = gameResult.data;
   if (!game) notFound();
-
   const playColor =
     game.color === "magenta"
       ? "magenta"
       : game.color === "yellow"
         ? "yellow"
         : "";
-
   return (
     <div className="av-detail fade-in">
       <div className="detail-cover">
         <div className={"cover-bg " + game.cover}></div>
       </div>
-
       <div className="detail-info">
         <h2>{game.title}</h2>
         <div className="detail-tags">
@@ -65,7 +58,6 @@ async function GameDetail({
           <span>1 JUGADOR</span>
         </div>
         <p>{game.long}</p>
-
         <div className="stat-strip">
           <div>
             <div className="l">Mejor puntuación</div>
@@ -80,7 +72,6 @@ async function GameDetail({
             <div className="v">{game.cat}</div>
           </div>
         </div>
-
         <div className="detail-actions">
           <Link
             href={`/juegos/${game.id}/jugar`}
@@ -92,7 +83,6 @@ async function GameDetail({
             VOLVER
           </Link>
         </div>
-
         <div className="leaderboard">
           <h3>TOP 10</h3>
           {!leaderboard.ok ? (
@@ -111,7 +101,10 @@ async function GameDetail({
                 className={"lb-row" + (row.rank <= 3 ? ` top${row.rank}` : "")}
               >
                 <span className="rk">#{String(row.rank).padStart(2, "0")}</span>
-                <span className="pl">{row.name}</span>
+                <span className="pl">
+                  {row.name}
+                  {row.hasAccount && <AccountBadge />}
+                </span>
                 <span className="sc">{row.score.toLocaleString("es-ES")}</span>
               </div>
             ))

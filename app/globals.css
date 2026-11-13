@@ -1548,6 +1548,19 @@
   .lb-row .pl {
     color: var(--ink);
   }
+  /* SPEC 14: rombo de «jugador con cuenta» junto al nombre (TOP 10, Salón y modal de fin). */
+  .account-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5em;
+    color: var(--cyan);
+    vertical-align: middle;
+    filter: drop-shadow(0 0 3px rgba(0, 245, 255, 0.75));
+  }
+  .account-badge svg {
+    width: max(0.7em, 7px);
+    height: max(0.7em, 7px);
+  }
   .lb-row .sc {
     text-align: right;
     font-family: var(--pixel);
