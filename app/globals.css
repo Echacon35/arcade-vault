@@ -317,7 +317,52 @@
   .av-nav .hamburger {
     display: none;
   }
-  @media (max-width: 840px) {
+  /* SPEC 12: menú de cuenta bajo ALIAS ▾. */
+  .av-nav .account {
+    position: relative;
+  }
+  .account-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 60;
+    width: 240px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    box-shadow: 0 0 24px rgba(0, 245, 255, 0.18);
+  }
+  /* Icono de cuenta: oculto en escritorio, visible a ≤ 960 px (SPEC 13). */
+  .av-nav .auth-btn .account-glyph {
+    display: none;
+  }
+  .account-alias {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+  .account-email {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    overflow-wrap: anywhere;
+  }
+  .account-menu .btn,
+  .mobile-account .btn {
+    padding: 10px 12px;
+    font-size: 9px;
+  }
+  .av-mobile-panel .mobile-account {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 12px;
+    border-bottom: 1px dashed var(--line-2);
+  }
+  @media (max-width: 960px) {
     .av-nav {
       padding: 12px 16px;
     }
@@ -329,6 +374,36 @@
     }
     .av-nav .hamburger {
       display: inline-flex;
+    }
+    /* SPEC 13: el botón de cuenta pasa a icono cuadrado para que la barra quepa en 360 px. */
+    .av-nav {
+      gap: 12px;
+    }
+    .av-nav .auth-btn {
+      margin-left: 0;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      flex-shrink: 0;
+      color: var(--ink-faint);
+      border-color: var(--line);
+    }
+    .av-nav .auth-btn.has-session {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.55));
+    }
+    .av-nav .auth-btn .auth-btn-text {
+      display: none;
+    }
+    .av-nav .auth-btn .account-glyph {
+      display: block;
+    }
+    .av-nav .hamburger {
+      flex-shrink: 0;
+    }
+    .av-nav .logo {
+      min-width: 0;
     }
   }
   .av-mobile-panel {
@@ -1344,22 +1419,6 @@
     filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.8))
       drop-shadow(0 0 14px rgba(57, 255, 20, 0.35));
   }
-  .cover-rana {
-    background: linear-gradient(180deg, #001f2a, #0a0a18);
-  }
-  .cover-rana::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      repeating-linear-gradient(
-        0deg,
-        rgba(0, 245, 255, 0.18) 0 20px,
-        transparent 20px 40px
-      ),
-      radial-gradient(circle at 50% 55%, var(--green) 0 14px, transparent 15px);
-    filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.5));
-  }
   .cover-duelo {
     background: #0a0a18;
   }
@@ -1488,6 +1547,19 @@
   }
   .lb-row .pl {
     color: var(--ink);
+  }
+  /* SPEC 14: rombo de «jugador con cuenta» junto al nombre (TOP 10, Salón y modal de fin). */
+  .account-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5em;
+    color: var(--cyan);
+    vertical-align: middle;
+    filter: drop-shadow(0 0 3px rgba(0, 245, 255, 0.75));
+  }
+  .account-badge svg {
+    width: max(0.7em, 7px);
+    height: max(0.7em, 7px);
   }
   .lb-row .sc {
     text-align: right;
@@ -1699,8 +1771,7 @@
     --tp-shell-shadow:
       0 30px 80px -30px rgba(0, 245, 255, 0.4),
       0 0 0 1px rgba(255, 255, 255, 0.02),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.6);
+      inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -2px 0 rgba(0, 0, 0, 0.6);
     position: relative;
     display: flex;
     align-items: center;
@@ -2224,6 +2295,19 @@
     border-color: var(--cyan);
     box-shadow: 0 0 10px rgba(0, 245, 255, 0.35);
   }
+  /* SPEC 14: alias fijo de la cuenta en lugar del campo de nombre. */
+  .modal .input-row .fixed-alias {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(0, 245, 255, 0.45);
+    background: rgba(0, 245, 255, 0.06);
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+  }
   .modal .actions {
     display: flex;
     gap: 10px;
@@ -2392,6 +2476,79 @@
     padding: 12px;
     font-size: 9px;
   }
+  /* SPEC 12: errores de campo, avisos y enlace de recuperación. */
+  .field input[aria-invalid="true"] {
+    border-color: var(--magenta);
+  }
+  .field input[aria-invalid="true"]:focus {
+    box-shadow: 0 0 12px rgba(255, 0, 110, 0.35);
+  }
+  .field input:disabled {
+    opacity: 0.6;
+  }
+  .field-error {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--magenta);
+  }
+  /* A diferencia de .toast-saved, el texto salta de línea: los mensajes no caben en 440 px. */
+  .auth-notice {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-left: 2px solid currentColor;
+    font-family: var(--pixel);
+    font-size: 9px;
+    line-height: 1.8;
+    letter-spacing: 0.1em;
+  }
+  .auth-notice.error {
+    color: var(--magenta);
+    background: rgba(255, 0, 110, 0.07);
+    text-shadow: 0 0 6px rgba(255, 0, 110, 0.45);
+  }
+  .auth-notice.ok {
+    color: var(--green);
+    background: rgba(0, 255, 136, 0.06);
+    text-shadow: 0 0 6px rgba(0, 255, 136, 0.45);
+  }
+  .auth-notice.info {
+    color: var(--cyan);
+    background: rgba(0, 245, 255, 0.06);
+  }
+  .auth-notice .detail {
+    display: block;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    text-shadow: none;
+    overflow-wrap: anywhere;
+  }
+  .auth-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 140ms;
+  }
+  .auth-link:hover,
+  .auth-link:focus-visible {
+    color: var(--cyan);
+  }
+  .auth-link:focus-visible,
+  .auth-tabs button:focus-visible {
+    outline: 1px solid var(--cyan);
+    outline-offset: 2px;
+  }
+  .auth-card .btn:disabled {
+    opacity: 0.55;
+    cursor: progress;
+  }
   /* ===== salón ===== */
   .av-hall {
     max-width: 1200px;
@@ -2526,6 +2683,8 @@
   }
   .hall-table .tr .pl {
     color: var(--ink);
+    /* SPEC 14: el rombo de cuenta no salta a otra línea en columnas estrechas (390 px). */
+    white-space: nowrap;
   }
   .hall-table .tr .sc {
     font-family: var(--pixel);
@@ -3091,13 +3250,23 @@
   }
   @media (max-width: 900px) {
     .activity-grid {
-      grid-template-columns: 1fr;
+      /* minmax(0, …): sin él la columna crece hasta el contenido y desborda a 360 px (SPEC 13). */
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   .activity-card {
     background: var(--bg-2);
     border: 1px solid var(--line);
     padding: 0;
+    min-width: 0;
+  }
+  /* SPEC 13: filas más compactas para que el ticker y el top quepan a 360 px. */
+  @media (max-width: 400px) {
+    .activity-card .tick-row {
+      gap: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
   }
   .ac-head {
     display: flex;

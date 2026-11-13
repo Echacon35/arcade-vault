@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { saveScoreAction } from "@/app/juegos/[id]/jugar/actions";
+import { AccountBadge } from "@/components/account-badge";
 import { GameCanvas, type GameCanvasHandle } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
 import { TouchPad } from "@/components/touch-pad";
@@ -47,10 +48,10 @@ export function GamePlayer({ game }: { game: Game }) {
   // FIN pulsado con motor real: la partida no se puede guardar.
   const [abandoned, setAbandoned] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  // `null` = el jugador no ha editado el nombre; así se usa el de la sesión
-  // en cuanto se hidrata desde localStorage.
+  // SPEC 14: con sesión el nombre es el alias de la cuenta y no se edita.
+  // Sin sesión, `null` = el invitado aún no ha escrito su nombre.
   const [nameInput, setNameInput] = useState<string | null>(null);
-  const name = nameInput ?? user?.name ?? "INVITADO";
+  const name = user ? user.name : (nameInput ?? "INVITADO");
   // Con motor, el nivel lo dicta el juego. En la simulación sube cada 2.500 puntos.
   const level = engine ? engineLevel : 1 + Math.floor(score / LEVEL_STEP);
   // Partida simulada: solo para juegos sin motor.
@@ -256,14 +257,24 @@ export function GamePlayer({ game }: { game: Game }) {
             ) : saveState !== "saved" ? (
               <>
                 <div className="input-row">
-                  <input
-                    value={name}
-                    disabled={saving}
-                    onChange={(e) =>
-                      setNameInput(e.target.value.toUpperCase().slice(0, 10))
-                    }
-                    placeholder="TUS INICIALES"
-                  />
+                  {user ? (
+                    // Con sesión se guarda con la cuenta: alias fijo, sin campo editable.
+                    <div className="fixed-alias">
+                      <span className="sr-only">Se guardará como </span>
+                      {name}
+                      <AccountBadge />
+                    </div>
+                  ) : (
+                    <input
+                      value={name}
+                      disabled={saving}
+                      onChange={(e) =>
+                        setNameInput(e.target.value.toUpperCase().slice(0, 10))
+                      }
+                      placeholder="TUS INICIALES"
+                      aria-label="Nombre para la puntuación"
+                    />
+                  )}
                   <button
                     className="btn yellow"
                     onClick={save}
