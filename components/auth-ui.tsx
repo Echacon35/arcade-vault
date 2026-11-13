@@ -5,7 +5,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthError, string> = {
   invalid_input: "▸ REVISA LOS DATOS DEL FORMULARIO_",
   invalid_credentials: "▸ CORREO O CONTRASEÑA INCORRECTOS_",
   email_not_confirmed: "▸ CONFIRMA TU CORREO ANTES DE ENTRAR_",
-  weak_password: "▸ LA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES_",
+  weak_password: "▸ LA CONTRASEÑA NO CUMPLE LOS REQUISITOS_",
   same_password: "▸ LA NUEVA CONTRASEÑA DEBE SER DISTINTA_",
   no_session: "▸ ENLACE CADUCADO O NO VÁLIDO_",
   rate_limited: "▸ DEMASIADOS INTENTOS — ESPERA UN MINUTO_",
@@ -16,7 +16,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthError, string> = {
 export const FIELD_MESSAGES = {
   alias: "▸ ALIAS: DE 1 A 10 LETRAS, NÚMEROS O _",
   email: "▸ CORREO NO VÁLIDO_",
-  password: "▸ LA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES_",
+  password: "▸ LA CONTRASEÑA NO CUMPLE LOS REQUISITOS_",
   passwordEmpty: "▸ ESCRIBE TU CONTRASEÑA_",
   passwordMismatch: "▸ LAS CONTRASEÑAS NO COINCIDEN_",
 } as const;

@@ -6,7 +6,7 @@ import {
   ALIAS_RE,
   EMAIL_RE,
   isOAuthProvider,
-  MIN_PASSWORD,
+  isStrongPassword,
   type OAuthProvider,
   safeNext,
 } from "@/lib/auth-rules";
@@ -26,8 +26,14 @@ const OK: AuthResult = { ok: true };
 const fail = (error: AuthError): AuthResult => ({ ok: false, error });
 const isEmail = (value: unknown): value is string =>
   typeof value === "string" && value.length <= 254 && EMAIL_RE.test(value);
-const isPassword = (value: unknown): value is string =>
-  typeof value === "string" && value.length >= MIN_PASSWORD;
+/**
+ * Valida una contraseña nueva (registro o recuperación): `invalid_input` si no
+ * es texto, `weak_password` si no cumple los requisitos (SPEC 16); si no, `null`.
+ */
+function checkNewPassword(value: unknown): AuthError | null {
+  if (typeof value !== "string") return "invalid_input";
+  return isStrongPassword(value) ? null : "weak_password";
+}
 /** Códigos de Supabase Auth → `AuthError` de la UI. Lo no previsto es `unknown`. */
 function mapError(error: SupabaseAuthError): AuthError {
   switch (error.code) {
@@ -75,13 +81,11 @@ export async function signUpAction(input: {
   const normalizedAlias =
     typeof alias === "string" ? alias.trim().toUpperCase() : "";
   const normalizedEmail = typeof email === "string" ? email.trim() : "";
-  if (
-    !ALIAS_RE.test(normalizedAlias) ||
-    !isEmail(normalizedEmail) ||
-    !isPassword(password)
-  ) {
+  if (!ALIAS_RE.test(normalizedAlias) || !isEmail(normalizedEmail)) {
     return fail("invalid_input");
   }
+  const passwordError = checkNewPassword(password);
+  if (passwordError) return fail(passwordError);
   try {
     const supabase = await createClient();
     const { error } = await supabase.auth.signUp({
@@ -159,7 +163,8 @@ export async function updatePasswordAction(input: {
   password: string;
 }): Promise<AuthResult> {
   const password = input?.password;
-  if (!isPassword(password)) return fail("invalid_input");
+  const passwordError = checkNewPassword(password);
+  if (passwordError) return fail(passwordError);
   try {
     const supabase = await createClient();
     const {
