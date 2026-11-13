@@ -10,6 +10,42 @@ export const ALIAS_RE = /^[A-Z0-9_]{1,10}$/;
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Longitud mínima de contraseña (igual que en Supabase Auth). */
 export const MIN_PASSWORD = 8;
+/**
+ * Símbolos aceptados en la contraseña: el mismo set que Supabase Auth con
+ * «Lowercase, uppercase letters, digits and symbols» (SPEC 16). Si cambia en
+ * el panel, hay que cambiarlo aquí.
+ */
+export const PASSWORD_SYMBOLS = "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~";
+/** Requisitos de la contraseña, en el orden en que se muestran (SPEC 16). */
+export const PASSWORD_CHECKS = [
+  "length",
+  "lower",
+  "upper",
+  "digit",
+  "symbol",
+] as const;
+export type PasswordCheck = (typeof PASSWORD_CHECKS)[number];
+/**
+ * Qué requisitos cumple una contraseña: longitud ≥ `MIN_PASSWORD`, `a-z`,
+ * `A-Z`, `0-9` y un símbolo de `PASSWORD_SYMBOLS`. Solo ASCII: la `ñ`, las
+ * tildes y el espacio no cuentan como letra ni como símbolo.
+ */
+export function passwordChecks(
+  password: string,
+): Record<PasswordCheck, boolean> {
+  return {
+    length: password.length >= MIN_PASSWORD,
+    lower: /[a-z]/.test(password),
+    upper: /[A-Z]/.test(password),
+    digit: /[0-9]/.test(password),
+    symbol: [...password].some((char) => PASSWORD_SYMBOLS.includes(char)),
+  };
+}
+/** `true` si la contraseña cumple los cinco requisitos (SPEC 16). */
+export function isStrongPassword(password: string): boolean {
+  const checks = passwordChecks(password);
+  return PASSWORD_CHECKS.every((check) => checks[check]);
+}
 /** Proveedores OAuth activos (SPEC 13). */
 export const OAUTH_PROVIDERS = ["google", "github"] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
