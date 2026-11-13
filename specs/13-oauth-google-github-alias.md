@@ -1,6 +1,6 @@
 # SPEC 13 — Acceso con Google y GitHub, alias obligatorio e icono de cuenta en móvil
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 12
 > **Fecha:** 2026-11-13
 > **Objetivo:** Permitir entrar con Google y GitHub, obligar a elegir alias en el primer acceso por OAuth y quitar el desbordamiento horizontal del nav en móvil sustituyendo el botón de cuenta por un icono.
