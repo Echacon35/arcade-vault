@@ -9,6 +9,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthError, string> = {
   same_password: "▸ LA NUEVA CONTRASEÑA DEBE SER DISTINTA_",
   no_session: "▸ ENLACE CADUCADO O NO VÁLIDO_",
   rate_limited: "▸ DEMASIADOS INTENTOS — ESPERA UN MINUTO_",
+  oauth_failed: "▸ NO SE PUDO ENTRAR CON GOOGLE O GITHUB — REINTENTA_",
   unknown: "▸ SEÑAL PERDIDA — REINTENTA_",
 };
 /** Errores de campo de la validación en el cliente. */

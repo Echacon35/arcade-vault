@@ -1,6 +1,15 @@
 "use server";
 import type { AuthError as SupabaseAuthError } from "@supabase/supabase-js";
-import { ALIAS_RE, EMAIL_RE, MIN_PASSWORD } from "@/lib/auth-rules";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import {
+  ALIAS_RE,
+  EMAIL_RE,
+  isOAuthProvider,
+  MIN_PASSWORD,
+  type OAuthProvider,
+  safeNext,
+} from "@/lib/auth-rules";
 import { createClient } from "@/lib/supabase/server";
 export type AuthError =
   | "invalid_input" // alias, correo o contraseña no válidos
@@ -10,6 +19,7 @@ export type AuthError =
   | "same_password" // la nueva contraseña es igual a la anterior
   | "no_session" // nueva-clave sin sesión de recuperación
   | "rate_limited"
+  | "oauth_failed" // el proveedor o Supabase no devolvieron la URL de OAuth (SPEC 13)
   | "unknown"; // red o error inesperado de Supabase
 export type AuthResult = { ok: true } | { ok: false; error: AuthError };
 const OK: AuthResult = { ok: true };
@@ -187,6 +197,65 @@ export async function saveAliasAction(input: {
     console.error("[saveAliasAction] error inesperado:", err);
     return fail("unknown");
   }
+}
+/**
+ * Origen público de la petición (SPEC 13), para la URL de vuelta del OAuth.
+ * Supabase solo acepta `redirectTo` dentro de su lista de Redirect URLs, así
+ * que un origen manipulado no provoca una redirección abierta.
+ */
+async function requestOrigin(): Promise<string | null> {
+  const h = await headers();
+  const origin = h.get("origin");
+  if (origin) return origin;
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (!host) return null;
+  const proto =
+    h.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+/**
+ * Inicia el acceso con Google o GitHub (SPEC 13): pide a Supabase la URL del
+ * proveedor y redirige allí. El verificador PKCE queda en una cookie del
+ * servidor y lo usa `/auth/callback`. Solo devuelve algo si falla.
+ */
+export async function signInWithOAuthAction(input: {
+  provider: OAuthProvider;
+  next: string;
+}): Promise<AuthResult> {
+  const provider = input?.provider;
+  if (!isOAuthProvider(provider)) return fail("invalid_input");
+  const next = safeNext(input?.next);
+  let url: string | null = null;
+  try {
+    const origin = await requestOrigin();
+    if (!origin) {
+      console.error("[signInWithOAuthAction] sin origen en las cabeceras");
+      return fail("oauth_failed");
+    }
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+    if (error) {
+      console.error(
+        "[signInWithOAuthAction] Supabase Auth:",
+        error.code ?? error.status,
+        error.message,
+      );
+      return fail(error.status === 429 ? "rate_limited" : "oauth_failed");
+    }
+    url = data.url;
+  } catch (err) {
+    console.error("[signInWithOAuthAction] error inesperado:", err);
+    return fail("oauth_failed");
+  }
+  if (!url) return fail("oauth_failed");
+  // `redirect` lanza una excepción de control: va fuera del try para no capturarla.
+  redirect(url);
 }
 /** Cierra la sesión en este navegador (las de otros dispositivos siguen abiertas). */
 export async function signOutAction(): Promise<AuthResult> {

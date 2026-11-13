@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   type AuthError,
   signInAction,
+  signInWithOAuthAction,
   signUpAction,
 } from "@/app/acceso/actions";
 import {
@@ -20,13 +21,33 @@ import {
   DEFAULT_NEXT,
   EMAIL_RE,
   MIN_PASSWORD,
+  type OAuthProvider,
   safeNext,
 } from "@/lib/auth-rules";
 type Tab = "in" | "up";
+/** Error que llega en la URL: enlace de correo caducado (SPEC 12) o vuelta fallida de OAuth (SPEC 13). */
+type UrlError = "enlace" | "oauth";
+const URL_ERROR_MESSAGES: Record<UrlError, string> = {
+  enlace: AUTH_ERROR_MESSAGES.no_session,
+  oauth: AUTH_ERROR_MESSAGES.oauth_failed,
+};
+const toUrlError = (value: string | null): UrlError | null =>
+  value === "enlace" || value === "oauth" ? value : null;
+/** Botones de OAuth: glifos del diseño original. */
+const OAUTH_BUTTONS: {
+  provider: OAuthProvider;
+  glyph: string;
+  label: string;
+  /** Nombre para la etiqueta accesible («Entrar con Google»). */
+  name: string;
+}[] = [
+  { provider: "google", glyph: "◆", label: "GOOGLE", name: "Google" },
+  { provider: "github", glyph: "▣", label: "GITHUB", name: "GitHub" },
+];
 type FieldErrors = Partial<Record<"alias" | "email" | "password", string>>;
 const SUBTITLE = "ACCESO AL SISTEMA · v2.6";
 /**
- * Lee `?modo=registro` (SPEC 02), `?next=` y `?error=enlace` (SPEC 12).
+ * Lee `?modo=registro` (SPEC 02), `?next=`, `?error=enlace` (SPEC 12) y `?error=oauth` (SPEC 13).
  * Usa `useSearchParams`, así que debe ir dentro de `<Suspense>`.
  * La `key` reinicia el formulario si cambia el modo estando ya en /acceso.
  */
@@ -38,18 +59,18 @@ export function AuthForm() {
       key={initialTab}
       initialTab={initialTab}
       next={safeNext(params.get("next"))}
-      linkError={params.get("error") === "enlace"}
+      urlError={toUrlError(params.get("error"))}
     />
   );
 }
 export function AuthFormView({
   initialTab,
   next = DEFAULT_NEXT,
-  linkError = false,
+  urlError = null,
 }: {
   initialTab: Tab;
   next?: string;
-  linkError?: boolean;
+  urlError?: UrlError | null;
 }) {
   const router = useRouter();
   const { user, ready, refresh, logout } = useSession();
@@ -59,8 +80,11 @@ export function AuthFormView({
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<AuthError | null>(null);
-  const [showLinkError, setShowLinkError] = useState(linkError);
+  const [shownUrlError, setShownUrlError] = useState(urlError);
   const [pending, setPending] = useState(false);
+  /** Proveedor al que se está redirigiendo: deshabilita el formulario hasta salir de la página. */
+  const [oauthPending, setOauthPending] = useState<OAuthProvider | null>(null);
+  const busy = pending || oauthPending !== null;
   /** Correo al que se envió la confirmación: sustituye el formulario por el aviso. */
   const [sentTo, setSentTo] = useState<string | null>(null);
   // Con sesión iniciada no hay formulario.
@@ -135,8 +159,8 @@ export function AuthFormView({
   };
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (pending) return;
-    setShowLinkError(false);
+    if (busy) return;
+    setShownUrlError(null);
     setFormError(null);
     const errors = validate();
     setFieldErrors(errors);
@@ -166,6 +190,23 @@ export function AuthFormView({
       setPending(false);
     }
   };
+  // Si todo va bien, la Server Action redirige al proveedor y no se vuelve aquí.
+  const startOAuth = async (provider: OAuthProvider) => {
+    if (busy) return;
+    setShownUrlError(null);
+    setFormError(null);
+    setOauthPending(provider);
+    try {
+      const result = await signInWithOAuthAction({ provider, next });
+      if (result && !result.ok) {
+        setFormError(result.error);
+        setOauthPending(null);
+      }
+    } catch {
+      setFormError("oauth_failed");
+      setOauthPending(null);
+    }
+  };
   return (
     <AuthCard subtitle={SUBTITLE}>
       <div className="auth-tabs" role="tablist">
@@ -188,8 +229,10 @@ export function AuthFormView({
           CREAR CUENTA
         </button>
       </div>
-      {showLinkError && (
-        <AuthNotice tone="error">{AUTH_ERROR_MESSAGES.no_session}</AuthNotice>
+      {shownUrlError && (
+        <AuthNotice tone="error">
+          {URL_ERROR_MESSAGES[shownUrlError]}
+        </AuthNotice>
       )}
       {formError && (
         <AuthNotice tone="error">{AUTH_ERROR_MESSAGES[formError]}</AuthNotice>
@@ -205,7 +248,7 @@ export function AuthFormView({
             error={fieldErrors.alias}
             placeholder="PX_KAI"
             autoComplete="nickname"
-            disabled={pending}
+            disabled={busy}
           />
         )}
         <AuthField
@@ -217,7 +260,7 @@ export function AuthFormView({
           error={fieldErrors.email}
           placeholder="jugador@vault.gg"
           autoComplete="email"
-          disabled={pending}
+          disabled={busy}
         />
         <AuthField
           id="auth-pass"
@@ -228,7 +271,7 @@ export function AuthFormView({
           error={fieldErrors.password}
           placeholder="••••••••"
           autoComplete={tab === "up" ? "new-password" : "current-password"}
-          disabled={pending}
+          disabled={busy}
         />
         {tab === "in" && (
           <div className="mb-3 flex justify-end">
@@ -237,7 +280,7 @@ export function AuthFormView({
             </Link>
           </div>
         )}
-        <button className="btn lg mt-2 w-full" type="submit" disabled={pending}>
+        <button className="btn lg mt-2 w-full" type="submit" disabled={busy}>
           {pending
             ? "CONECTANDO…"
             : tab === "in"
@@ -249,10 +292,26 @@ export function AuthFormView({
         type="button"
         className="btn ghost mt-2.5 w-full"
         onClick={() => router.push("/juegos")}
-        disabled={pending}
+        disabled={busy}
       >
         JUGAR COMO INVITADO
       </button>
+      <div className="auth-divider">O CONTINÚA CON</div>
+      <div className="social">
+        {OAUTH_BUTTONS.map(({ provider, glyph, label, name }) => (
+          <button
+            key={provider}
+            type="button"
+            className="btn ghost"
+            onClick={() => void startOAuth(provider)}
+            disabled={busy}
+            aria-busy={oauthPending === provider}
+            aria-label={`Entrar con ${name}`}
+          >
+            {oauthPending === provider ? "CONECTANDO…" : `${glyph} ${label}`}
+          </button>
+        ))}
+      </div>
       <div className="mt-[18px] text-center text-[11px] tracking-[0.1em] text-ink-faint">
         AL ENTRAR ACEPTAS LOS TÉRMINOS DEL SALÓN ARCADE
       </div>
