@@ -2569,6 +2569,50 @@
     letter-spacing: 0.08em;
     color: var(--magenta);
   }
+  /* SPEC 16: requisitos de la contraseña en vivo; un piloto por requisito. */
+  /* Columnas iguales: 3 + 2 en la tarjeta de escritorio y 2 + 2 + 1 a 360 px, siempre alineadas. */
+  .pw-reqs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 6px 10px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pw-req {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    transition: color 140ms;
+  }
+  .pw-req .led {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--ink-faint);
+    transition:
+      background-color 140ms,
+      border-color 140ms,
+      box-shadow 140ms;
+  }
+  .pw-req.on {
+    color: var(--cyan);
+  }
+  .pw-req.on .led {
+    border-color: var(--cyan);
+    background: var(--cyan);
+    box-shadow: 0 0 6px rgba(0, 245, 255, 0.8);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pw-req,
+    .pw-req .led {
+      transition: none;
+    }
+  }
   /* A diferencia de .toast-saved, el texto salta de línea: los mensajes no caben en 440 px. */
   .auth-notice {
     margin: 0 0 14px;

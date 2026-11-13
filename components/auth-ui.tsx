@@ -64,7 +64,11 @@ export function AuthNotice({
     </div>
   );
 }
-/** Campo de formulario con su error debajo, enlazado por `aria-describedby`. */
+/**
+ * Campo de formulario con su error debajo, enlazado por `aria-describedby`.
+ * `hint` (con su `hintId`) va entre el input y el error, p. ej. la lista de
+ * requisitos de la contraseña (SPEC 16).
+ */
 export function AuthField({
   id,
   label,
@@ -76,6 +80,8 @@ export function AuthField({
   autoComplete,
   disabled,
   className,
+  hint,
+  hintId,
 }: {
   id: string;
   label: string;
@@ -87,8 +93,12 @@ export function AuthField({
   autoComplete?: string;
   disabled?: boolean;
   className?: string;
+  hint?: ReactNode;
+  hintId?: string;
 }) {
   const errorId = `${id}-error`;
+  const describedBy =
+    [hint && hintId, error && errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div className={className ? `field ${className}` : "field"}>
       <label htmlFor={id}>{label}</label>
@@ -101,8 +111,9 @@ export function AuthField({
         autoComplete={autoComplete}
         disabled={disabled}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy}
       />
+      {hint}
       {error && (
         <span id={errorId} className="field-error">
           {error}
