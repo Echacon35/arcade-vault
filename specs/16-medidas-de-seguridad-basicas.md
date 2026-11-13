@@ -60,7 +60,7 @@ El asesor de seguridad también avisa (dos veces, `WARN`) de que `public.rls_aut
 - **Documentación:** `CLAUDE.md` recoge el rate limit, las cabeceras, la migración y el problema conocido.
 - **Protección de rutas con el Proxy de Next.js** (`proxy.ts`, ver https://nextjs.org/docs/app/getting-started/proxy y `node_modules/next/dist/docs/`), _concretado al empezar la implementación, 2026-11-13_:
   - **Sin sesión:** `/acceso/alias` y `/acceso/nueva-clave` redirigen a `/acceso?next=<ruta original con su query>`.
-  - **Con sesión:** `/acceso` y `/acceso/recuperar` redirigen a `safeNext(next)` (por defecto `/`). Sustituye al estado «sesión iniciada como» de `/acceso` (SPEC 12).
+  - **Con sesión:** `/acceso` y `/acceso/recuperar` redirigen a `safeNext(next)` (por defecto `DEFAULT_NEXT` = `/juegos`; si `next` apunta a otra ruta solo para invitados, también `/juegos`, para no entrar en bucle). Solo se redirigen peticiones GET y HEAD: las Server Actions son POST a la propia ruta. Sustituye al estado «sesión iniciada como» de `/acceso` (SPEC 12).
   - El usuario sale del `getUser()` que ya hace `updateSession` (`lib/supabase/proxy.ts`), sin otra llamada a Supabase. La redirección conserva las cookies de sesión que `updateSession` haya refrescado.
   - `/auth/*` y el resto de rutas no cambian: siguen siendo públicas.
 
@@ -184,7 +184,7 @@ Configuración manual en el panel de Supabase:
    - poner _sign-ups and sign-ins_ a 5 cada 5 minutos en Auth → Rate Limits;
    - confirmar que la leaked password protection no está disponible en Free.
 8. **Mensaje de rate limit:** cambiar el texto de `rate_limited` en `components/auth-ui.tsx` a `▸ DEMASIADOS INTENTOS — ESPERA UNOS MINUTOS_`. Comprobación con Playwright: seis intentos de login con contraseña incorrecta seguidos en `/acceso` y el sexto muestra ese mensaje; si el registro tiene un contador separado, igual en la pestaña de registro. Tras 5 minutos se puede volver a entrar.
-9. **Protección de rutas con el Proxy:** `updateSession` devuelve también el usuario y `proxy.ts` redirige según las reglas del alcance. Comprobación: sin sesión, `/acceso/alias?next=/salon` lleva a `/acceso?next=%2Facceso%2Falias%3Fnext%3D%252Fsalon`; con sesión, `/acceso` lleva a `/` y `/acceso?next=/salon` a `/salon`; el flujo de recuperación (enlace del correo → `/auth/confirm` → `/acceso/nueva-clave`) sigue funcionando.
+9. **Protección de rutas con el Proxy:** `updateSession` devuelve también `hasSession` y `proxy.ts` redirige según las reglas del alcance. Comprobación: sin sesión, `/acceso/alias?next=/salon` lleva a `/acceso?next=%2Facceso%2Falias%3Fnext%3D%252Fsalon`; con sesión, `/acceso` lleva a `/juegos` y `/acceso?next=/salon` a `/salon`; el flujo de recuperación (enlace del correo → `/auth/confirm` → `/acceso/nueva-clave`) sigue funcionando.
 10. **Checklist y documentación:**
     - marcar las casillas en `references/security/security-checklist.md` y anotar lo de la leaked password protection;
     - `CLAUDE.md`: requisitos de contraseña (`isStrongPassword`, `PasswordRequirements`) en el párrafo de autenticación, _Password requirements_ y rate limit en la configuración de Auth, cabeceras en «Stack y particularidades», la migración en «Supabase» y dos entradas en «Problemas conocidos» (contraseñas filtradas en Free y rate limit por IP del servidor).
@@ -214,7 +214,7 @@ Configuración manual en el panel de Supabase:
 - [ ] `supabase/migrations/` tiene el `.sql` de `revoke_rls_auto_enable_execute` con la misma versión que `list_migrations`.
 - [ ] El asesor solo muestra `security_definer_view` (aceptado, SPEC 14) y `auth_leaked_password_protection` (aceptado, plan Free).
 - [ ] Sin sesión, `/acceso/alias` y `/acceso/nueva-clave` redirigen a `/acceso?next=<ruta>`.
-- [ ] Con sesión, `/acceso` y `/acceso/recuperar` redirigen a `/` (o al `next` interno si lo hay).
+- [ ] Con sesión, `/acceso` y `/acceso/recuperar` redirigen a `/juegos` (o al `next` interno si lo hay), y un POST a esas rutas no se redirige.
 - [ ] El flujo de recuperación de contraseña y el alias obligatorio tras OAuth siguen funcionando.
 - [ ] `references/security/security-checklist.md` tiene marcadas las casillas hechas y la nota de la leaked password protection.
 - [ ] `CLAUDE.md` recoge el rate limit, las cabeceras, la migración y los dos problemas conocidos.

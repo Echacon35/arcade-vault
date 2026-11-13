@@ -7,10 +7,13 @@ import { getSupabaseEnv } from "./env";
  *
  * Lee las cookies de la petición y, si el token caducó, escribe las nuevas
  * tanto en la petición (para que las vean los Server Components de esta
- * misma petición) como en la respuesta (para el navegador). No protege
- * rutas: solo mantiene la sesión viva.
+ * misma petición) como en la respuesta (para el navegador). Devuelve también
+ * si hay sesión, para que `proxy.ts` decida las redirecciones (SPEC 16) sin
+ * otra llamada a Supabase.
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest,
+): Promise<{ response: NextResponse; hasSession: boolean }> {
   const { url, publishableKey } = getSupabaseEnv();
   let response = NextResponse.next({ request });
   // Un cliente por petición: las cabeceras anti-caché solo llegan en la primera escritura.
@@ -35,6 +38,8 @@ export async function updateSession(request: NextRequest) {
     },
   });
   // Nada entre crear el cliente y esta llamada: es la que dispara el refresco del token.
-  await supabase.auth.getUser();
-  return response;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return { response, hasSession: user !== null };
 }
