@@ -335,6 +335,49 @@
     border: 1px solid var(--line);
     box-shadow: 0 0 24px rgba(0, 245, 255, 0.18);
   }
+  /* SPEC 15: foto de la cuenta en un círculo, con iniciales del alias como respaldo. */
+  .user-avatar {
+    --avatar-size: 28px;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    overflow: hidden;
+    border: 1px solid var(--cyan);
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle at 32% 28%,
+        rgba(0, 245, 255, 0.3),
+        rgba(0, 245, 255, 0.07) 68%
+      ),
+      var(--bg);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.45);
+  }
+  .user-avatar[data-size="40"] {
+    --avatar-size: 40px;
+  }
+  .user-avatar[data-size="48"] {
+    --avatar-size: 48px;
+  }
+  .user-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .user-avatar-initials {
+    font-family: var(--pixel);
+    font-size: calc(var(--avatar-size) * 0.32);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: var(--cyan);
+    text-shadow: 0 0 6px rgba(0, 245, 255, 0.6);
+    /* La fuente pixel queda un poco alta: se compensa para centrarla en el círculo. */
+    transform: translate(0.04em, 0.06em);
+  }
   /* Icono de cuenta: oculto en escritorio, visible a ≤ 960 px (SPEC 13). */
   .av-nav .auth-btn .account-glyph {
     display: none;
