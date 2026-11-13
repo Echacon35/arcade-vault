@@ -2683,6 +2683,8 @@
   }
   .hall-table .tr .pl {
     color: var(--ink);
+    /* SPEC 14: el rombo de cuenta no salta a otra línea en columnas estrechas (390 px). */
+    white-space: nowrap;
   }
   .hall-table .tr .sc {
     font-family: var(--pixel);

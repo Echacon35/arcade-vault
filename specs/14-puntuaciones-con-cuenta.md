@@ -1,6 +1,6 @@
 # SPEC 14 — Puntuaciones vinculadas a la cuenta
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 06, SPEC 06.5, SPEC 12, SPEC 13
 > **Fecha:** 2026-11-13
 > **Objetivo:** Guardar las puntuaciones de los jugadores con sesión vinculadas a su cuenta (`scores.user_id`) y con su alias fijo, y distinguirlas en el TOP 10 y en el Salón de la Fama.
