@@ -1,6 +1,6 @@
 # SPEC 15 — Foto de la cuenta en el nav
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 12, SPEC 13
 > **Fecha:** 2026-11-13
 > **Objetivo:** Mostrar la foto del jugador en un círculo en el botón de cuenta, en el menú de cuenta y en el panel móvil del nav, con las iniciales del alias como respaldo cuando no hay foto.
