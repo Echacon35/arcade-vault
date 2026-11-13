@@ -8,7 +8,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthError, string> = {
   weak_password: "▸ LA CONTRASEÑA NO CUMPLE LOS REQUISITOS_",
   same_password: "▸ LA NUEVA CONTRASEÑA DEBE SER DISTINTA_",
   no_session: "▸ ENLACE CADUCADO O NO VÁLIDO_",
-  rate_limited: "▸ DEMASIADOS INTENTOS — ESPERA UN MINUTO_",
+  rate_limited: "▸ DEMASIADOS INTENTOS — ESPERA UNOS MINUTOS_",
   oauth_failed: "▸ NO SE PUDO ENTRAR CON GOOGLE O GITHUB — REINTENTA_",
   unknown: "▸ SEÑAL PERDIDA — REINTENTA_",
 };

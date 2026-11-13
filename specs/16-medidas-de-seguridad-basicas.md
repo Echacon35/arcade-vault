@@ -262,6 +262,12 @@ Configuración manual en el panel de Supabase:
 
 ---
 
+## Problemas conocidos
+
+- **El límite de 5 _sign-ups and sign-ins_ no salta con inicios de sesión fallidos** (Paso 8, 2026-11-13). Con el ajuste en 5 cada 5 minutos en el panel, siete intentos seguidos de `/acceso` con contraseña incorrecta devolvieron `400 invalid_credentials` y ninguno `429`. Según los logs de Auth, los siete llegaron desde la misma IP (`POST /auth/v1/token?grant_type=password`). No se sabe si el ajuste no llegó a aplicarse o si ese límite no cuenta los logins fallidos. El texto de `rate_limited` ya se cambió y `mapError` traduce cualquier `429`, así que el mensaje saldrá en cuanto Supabase lo devuelva. El criterio «el sexto intento muestra `▸ DEMASIADOS INTENTOS — ESPERA UNOS MINUTOS_`» queda sin verificar. Decisión del usuario: documentarlo y seguir.
+
+---
+
 ## Lo que **no** está en esta spec
 
 - Content-Security-Policy.
