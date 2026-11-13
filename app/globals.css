@@ -378,7 +378,32 @@
     /* La fuente pixel queda un poco alta: se compensa para centrarla en el círculo. */
     transform: translate(0.04em, 0.06em);
   }
-  /* Icono de cuenta: oculto en escritorio, visible a ≤ 960 px (SPEC 13). */
+  /* SPEC 15: botón de cuenta en escritorio con la foto a la izquierda del alias. */
+  .av-nav .auth-btn .auth-btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  @media (min-width: 1101px) {
+    /* Menos relleno vertical para que el círculo de 28 px no agrande el botón. */
+    .av-nav .auth-btn.has-session {
+      padding: 6px 16px 6px 6px;
+    }
+  }
+  /* Cabecera del menú de cuenta: foto de 48 px junto al alias y el correo. */
+  .account-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .account-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  /* Icono de cuenta: oculto en escritorio, visible a ≤ 1100 px (SPEC 13, corte subido en SPEC 15). */
   .av-nav .auth-btn .account-glyph {
     display: none;
   }
@@ -405,7 +430,7 @@
     padding: 14px 12px;
     border-bottom: 1px dashed var(--line-2);
   }
-  @media (max-width: 960px) {
+  @media (max-width: 1100px) {
     .av-nav {
       padding: 12px 16px;
     }

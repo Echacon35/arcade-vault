@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { useSession } from "@/components/session-provider";
+import { UserAvatar } from "@/components/user-avatar";
 type Section = "inicio" | "biblioteca" | "salon" | "acerca" | "acceso";
 function sectionFor(pathname: string | null): Section | null {
   if (pathname === null) return null;
@@ -36,7 +37,7 @@ function NavWithPathname() {
  * cambia de página.
  */
 /**
- * Icono de cuenta en pixel-art (12×12), SPEC 13. Solo se ve a ≤ 960 px, donde
+ * Icono de cuenta en pixel-art (12×12), SPEC 13. Solo se ve a ≤ 1100 px, donde
  * sustituye al texto del botón de cuenta; el color lo pone el botón (`currentColor`).
  */
 function AccountGlyph() {
@@ -56,7 +57,15 @@ function AccountGlyph() {
     </svg>
   );
 }
-function AccountMenu({ alias, email }: { alias: string; email: string }) {
+function AccountMenu({
+  alias,
+  email,
+  avatarUrl,
+}: {
+  alias: string;
+  email: string;
+  avatarUrl: string | null;
+}) {
   const { logout } = useSession();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -100,13 +109,22 @@ function AccountMenu({ alias, email }: { alias: string; email: string }) {
         aria-label={`Cuenta de ${alias}`}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="auth-btn-text">{alias} ▾</span>
+        {/* Escritorio (> 1100 px): foto de 28 px + ALIAS ▾ (SPEC 15). */}
+        <span className="auth-btn-text">
+          <UserAvatar name={alias} avatarUrl={avatarUrl} size={28} />
+          {alias} ▾
+        </span>
         <AccountGlyph />
       </button>
       {open && (
         <div id={menuId} className="account-menu">
-          <div className="account-alias pixel neon-cyan">{alias}</div>
-          <div className="account-email">{email}</div>
+          <div className="account-head">
+            <UserAvatar name={alias} avatarUrl={avatarUrl} size={48} />
+            <div className="account-head-text">
+              <div className="account-alias pixel neon-cyan">{alias}</div>
+              <div className="account-email">{email}</div>
+            </div>
+          </div>
           <button
             type="button"
             className="btn magenta w-full"
@@ -158,7 +176,11 @@ function NavBar({ active }: { active: Section | null }) {
         {/* Hasta leer la sesión no se pinta nada: así no parpadea «Iniciar Sesión». */}
         {ready &&
           (user ? (
-            <AccountMenu alias={user.name} email={user.email} />
+            <AccountMenu
+              alias={user.name}
+              email={user.email}
+              avatarUrl={user.avatarUrl}
+            />
           ) : (
             <button
               className="btn auth-btn"

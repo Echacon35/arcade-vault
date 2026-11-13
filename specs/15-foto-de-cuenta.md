@@ -36,11 +36,12 @@ Las cuentas de Google y GitHub ya traen la foto en `user_metadata`, pero no se u
   - Siempre en mayúsculas y con un máximo de 2 caracteres.
 - **Componente compartido `UserAvatar`**, con un tamaño por uso:
   - **28 px** en el botón de escritorio;
-  - **40 px** en el botón compacto (≤ 960 px);
+  - **40 px** en el botón compacto (≤ 1100 px);
   - **48 px** en el menú de cuenta y en el panel móvil.
-- **Escritorio (> 960 px), con sesión:** el botón muestra el círculo de 28 px a la izquierda de `ALIAS ▾`.
-- **Hasta 960 px, con sesión:** el círculo de 40 px **sustituye** al icono pixel-art de la SPEC 13, con su borde cian. `aria-label="Cuenta de <ALIAS>"` no cambia.
+- **Escritorio (> 1100 px), con sesión:** el botón muestra el círculo de 28 px a la izquierda de `ALIAS ▾`.
+- **Hasta 1100 px, con sesión:** el círculo de 40 px **sustituye** al icono pixel-art de la SPEC 13, con su borde cian. `aria-label="Cuenta de <ALIAS>"` no cambia.
 - **Sin sesión:** el icono pixel-art apagado de la SPEC 13 y el texto `Iniciar Sesión` en escritorio no cambian.
+- **Corte del nav compacto: 960 → 1100 px** (_ampliado durante la implementación, 2026-11-13_). Con la foto de 28 px y un alias de 10 caracteres, el nav desbordaba 11 px a 961 px. El corte de la SPEC 13 sube a 1100 px, con y sin sesión.
 - **Menú de cuenta (desplegable):** cabecera con el círculo de 48 px a la izquierda del alias y el correo, en todos los tamaños.
 - **Panel de la hamburguesa (móvil), con sesión:** el bloque de cuenta lleva el mismo círculo de 48 px junto al alias y el correo.
 - **Carga de la imagen:**
@@ -117,11 +118,11 @@ Pinta la foto si hay `avatarUrl` y no ha fallado; si no, las iniciales. Es decor
    No lo usa nadie todavía.
 
 3. **Botón de cuenta en escritorio y cabecera del menú** en `components/nav.tsx`: círculo de 28 px + `ALIAS ▾`, y círculo de 48 px junto al alias y el correo en el menú.
-4. **Botón compacto (≤ 960 px) con sesión y panel de la hamburguesa**:
+4. **Botón compacto (≤ 1100 px) con sesión y panel de la hamburguesa**:
    - el círculo de 40 px sustituye a `AccountGlyph`;
    - el bloque de cuenta del panel lleva el círculo de 48 px.
 
-   Sin sesión no cambia nada. Comprobación: a 360, 390 y 961 px no hay scroll horizontal, con y sin sesión.
+   Sin sesión no cambia nada. Comprobación: a 360, 390, 1100 y 1101 px no hay scroll horizontal, con y sin sesión.
 
 5. **Actualizar `CLAUDE.md`**: `avatarUrl` en `SessionUser`, `UserAvatar` y la regla de las iniciales en el párrafo de autenticación.
 
@@ -136,10 +137,10 @@ Pinta la foto si hay `avatarUrl` y no ha fallado; si no, las iniciales. Es decor
 - [ ] Con una cuenta de correo, el círculo muestra las iniciales del alias (`PX_KAI` → `PK`) en lugar de una foto.
 - [ ] Si la URL de la foto no carga, el círculo pasa a mostrar las iniciales sin dejar una imagen rota.
 - [ ] El menú de cuenta muestra el círculo de 48 px junto al alias y el correo.
-- [ ] A ≤ 960 px y con sesión, el botón de cuenta es el círculo de 40 px con la foto o las iniciales, con `aria-label="Cuenta de <ALIAS>"`, y abre el menú.
-- [ ] A ≤ 960 px y sin sesión, se sigue viendo el icono pixel-art apagado, que lleva a `/acceso`.
+- [ ] A ≤ 1100 px y con sesión, el botón de cuenta es el círculo de 40 px con la foto o las iniciales, con `aria-label="Cuenta de <ALIAS>"`, y abre el menú.
+- [ ] A ≤ 1100 px y sin sesión, se sigue viendo el icono pixel-art apagado, que lleva a `/acceso`.
 - [ ] El bloque de cuenta del panel de la hamburguesa muestra el círculo de 48 px junto al alias y el correo.
-- [ ] A 360, 390 y 961 px no hay scroll horizontal en `/`, `/juegos` y `/acceso`, con y sin sesión.
+- [ ] A 360, 390, 1100 y 1101 px no hay scroll horizontal en `/`, `/juegos` y `/acceso`, con y sin sesión.
 - [ ] Las `<img>` del avatar llevan `alt=""` y `referrerPolicy="no-referrer"`.
 - [ ] `next.config.ts` no cambia.
 
@@ -152,7 +153,9 @@ Pinta la foto si hay `avatarUrl` y no ha fallado; si no, las iniciales. Es decor
 - **No:** el icono pixel-art dentro del círculo. Sería igual para todas las cuentas sin foto.
 - **Sí:** círculo + `ALIAS ▾` en escritorio, porque se sigue leyendo quién ha iniciado sesión.
 - **No:** solo el círculo en escritorio.
-- **Sí:** hasta 960 px, con sesión, el círculo sustituye al icono pixel-art. Sin sesión se mantiene el icono apagado, que señala «Iniciar sesión».
+- **Sí:** hasta 1100 px, con sesión, el círculo sustituye al icono pixel-art. Sin sesión se mantiene el icono apagado, que señala «Iniciar sesión».
+- **Sí:** subir el corte del nav compacto de 960 a 1100 px (decisión del usuario en el paso 3). Evita el desbordamiento con alias largos y alivia el nav apretado entre 961 y ~1100 px que detectó la QA de la SPEC 13.
+- **No:** ocultar la foto del botón entre 961 y 1100 px, ni aceptar el desbordamiento como problema conocido.
 - **Sí:** foto grande en el menú y en el panel móvil, para que la cuenta se vea igual en todas partes.
 - **Sí:** iniciales por partes con `_` y, si no las hay, dos letras. Más distintivas que una sola letra.
 - **Sí:** `<img>` normal con `referrerPolicy="no-referrer"`. Son imágenes pequeñas, no hace falta tocar `next.config.ts`, y Google a veces rechaza la petición si lleva referer.
@@ -165,12 +168,12 @@ Pinta la foto si hay `avatarUrl` y no ha fallado; si no, las iniciales. Es decor
 
 ## Riesgos
 
-| Riesgo                                                                                                             | Mitigación                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| La URL de la foto caduca o el proveedor la cambia (la foto de Google puede devolver 403).                          | `onError` cambia a las iniciales. La foto se actualiza en el siguiente acceso con el proveedor.                   |
-| `user_metadata.avatar_url` lo puede cambiar el propio usuario con `auth.updateUser` y poner cualquier URL `https`. | Solo se muestra a ese mismo usuario en su nav, nunca a otros jugadores. No se usa para autorizar nada.            |
-| El círculo de 28 px en escritorio vuelve a apretar el nav justo por encima de 960 px.                              | El criterio de 961 px sin scroll horizontal se comprueba con sesión, y con un alias de 10 caracteres si se puede. |
-| Cargar imágenes de terceros revela al proveedor la IP del jugador.                                                 | Es la misma foto que el jugador ya usa en ese proveedor, y `no-referrer` evita enviar la URL de Arcade Vault.     |
+| Riesgo                                                                                                             | Mitigación                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| La URL de la foto caduca o el proveedor la cambia (la foto de Google puede devolver 403).                          | `onError` cambia a las iniciales. La foto se actualiza en el siguiente acceso con el proveedor.                    |
+| `user_metadata.avatar_url` lo puede cambiar el propio usuario con `auth.updateUser` y poner cualquier URL `https`. | Solo se muestra a ese mismo usuario en su nav, nunca a otros jugadores. No se usa para autorizar nada.             |
+| El círculo de 28 px en escritorio vuelve a apretar el nav justo por encima del corte compacto.                     | El criterio de 1101 px sin scroll horizontal se comprueba con sesión, y con un alias de 10 caracteres si se puede. |
+| Cargar imágenes de terceros revela al proveedor la IP del jugador.                                                 | Es la misma foto que el jugador ya usa en ese proveedor, y `no-referrer` evita enviar la URL de Arcade Vault.      |
 
 ---
 
