@@ -113,7 +113,9 @@ const BASE = "http://arcade-vault.local";
 /**
  * Devuelve `next` solo si es una ruta interna (`/...`); cualquier otra cosa,
  * incluidas `//host`, `/\host` y URLs absolutas, devuelve `DEFAULT_NEXT`.
- * Evita redirecciones abiertas con `?next=`.
+ * Evita redirecciones abiertas con `?next=`. Valida también la ruta ya
+ * normalizada (SPEC 17): `/.//host`, `/..//host` o `/%2e//host` pasan el
+ * primer filtro pero se resuelven a `//host`, relativo al protocolo.
  */
 export function safeNext(next: string | null | undefined): string {
   if (
@@ -127,7 +129,10 @@ export function safeNext(next: string | null | undefined): string {
   try {
     const url = new URL(next, BASE);
     if (url.origin !== BASE) return DEFAULT_NEXT;
-    return `${url.pathname}${url.search}${url.hash}`;
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    // `/.//host`, `/..//host` o `/%2e//host` se normalizan a `//host` (relativo al protocolo).
+    if (path.startsWith("//") || path.startsWith("/\\")) return DEFAULT_NEXT;
+    return path;
   } catch {
     return DEFAULT_NEXT;
   }

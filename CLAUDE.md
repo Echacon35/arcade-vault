@@ -101,6 +101,7 @@ Definiciones en `.claude/agents/`; consulta el archivo de cada uno para el detal
 - [`game-jam`](.claude/agents/game-jam.md) — diseña un juego original a partir de un tema y escribe sus specs en `specs/game-jam/<id>/`. No escribe código.
 - [`skin-designer`](.claude/agents/skin-designer.md) — garantiza las skins `neon`, `retro`, `clasico` y `pastel` de un juego. Memoria: `references/games-with-themes.md`.
 - [`mobile-porter`](.claude/agents/mobile-porter.md) — hace jugable un juego en el móvil (pad táctil y gestos, SPEC 10). Memoria: `references/games-with-touch.md`.
+- [`security-auditor`](.claude/agents/security-auditor.md) — audita la seguridad contra las garantías de las SPEC 12–16 y el estado de Supabase (MCP en solo lectura); informa por severidad y, si hay que corregir algo, escribe una spec en Borrador. No toca código ni la base de datos. Úsalo a demanda, p. ej. antes de fusionar specs que toquen auth, Supabase, Server Actions, `proxy.ts` o `next.config.ts`. Memoria: `references/security/security-audit.md`.
 
 Rutina en la nube `game-jam-nocturno` (gestión con `/schedule`): de lunes a viernes a las 2:00 (Ciudad de México) invoca `game-jam` con la siguiente sugerencia pendiente y sube la rama `game-jam-<id>`, sin PR.
 
