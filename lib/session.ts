@@ -1,5 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import { ALIAS_RE } from "@/lib/auth-rules";
+import { ALIAS_RE, FALLBACK_ALIAS, suggestAlias } from "@/lib/auth-rules";
 import { createClient } from "@/lib/supabase/client";
 // ─── Sesión (SPEC 12) ───────────────────────────────────────────────────────
 //
@@ -10,15 +10,17 @@ import { createClient } from "@/lib/supabase/client";
 export type SessionUser = {
   id: string; // auth.users.id
   email: string;
-  name: string; // user_metadata.alias; "JUGADOR" si falta
+  name: string; // alias válido o "JUGADOR"
+  /** false si `user_metadata.alias` falta o no cumple ALIAS_RE (cuenta OAuth nueva, SPEC 13). */
+  hasAlias: boolean;
+  /** Propuesta para /acceso/alias, calculada con `suggestAlias(user_metadata)`. */
+  aliasSuggestion: string;
 };
 export type SessionSnapshot = {
   /** false hasta la primera lectura de la sesión. */
   ready: boolean;
   user: SessionUser | null;
 };
-/** Alias de reserva si la cuenta no tiene uno válido en sus metadatos. */
-const FALLBACK_NAME = "JUGADOR";
 /** Clave de la sesión simulada anterior: se borra al arrancar. */
 const LEGACY_USER_KEY = "av_user";
 const SERVER_SNAPSHOT: SessionSnapshot = { ready: false, user: null };
@@ -27,17 +29,26 @@ let started = false;
 const listeners = new Set<() => void>();
 function toSessionUser(user: User | null | undefined): SessionUser | null {
   if (!user) return null;
-  const alias: unknown = user.user_metadata?.alias;
+  const metadata: Record<string, unknown> = user.user_metadata ?? {};
+  const alias = metadata.alias;
+  const hasAlias = typeof alias === "string" && ALIAS_RE.test(alias);
   return {
     id: user.id,
     email: user.email ?? "",
-    name:
-      typeof alias === "string" && ALIAS_RE.test(alias) ? alias : FALLBACK_NAME,
+    name: hasAlias ? alias : FALLBACK_ALIAS,
+    hasAlias,
+    aliasSuggestion: suggestAlias(metadata, user.email),
   };
 }
 const sameUser = (a: SessionUser | null, b: SessionUser | null) =>
   a === b ||
-  (!!a && !!b && a.id === b.id && a.email === b.email && a.name === b.name);
+  (!!a &&
+    !!b &&
+    a.id === b.id &&
+    a.email === b.email &&
+    a.name === b.name &&
+    a.hasAlias === b.hasAlias &&
+    a.aliasSuggestion === b.aliasSuggestion);
 /** Publica un usuario nuevo solo si cambia algo, para no re-renderizar en vano. */
 function publish(user: SessionUser | null) {
   if (snapshot.ready && sameUser(snapshot.user, user)) return;
