@@ -10,8 +10,9 @@ import {
   AuthNotice,
   FIELD_MESSAGES,
 } from "@/components/auth-ui";
+import { PasswordRequirements } from "@/components/password-requirements";
 import { useSession } from "@/components/session-provider";
-import { DEFAULT_NEXT, MIN_PASSWORD } from "@/lib/auth-rules";
+import { DEFAULT_NEXT, isStrongPassword } from "@/lib/auth-rules";
 const SUBTITLE = "NUEVA CONTRASEÑA";
 type FieldErrors = Partial<Record<"password" | "repeat", string>>;
 /**
@@ -46,8 +47,7 @@ export function NewPasswordForm() {
     if (pending || !ready) return;
     setFormError(null);
     const errors: FieldErrors = {};
-    if (password.length < MIN_PASSWORD)
-      errors.password = FIELD_MESSAGES.password;
+    if (!isStrongPassword(password)) errors.password = FIELD_MESSAGES.password;
     else if (repeat !== password)
       errors.repeat = FIELD_MESSAGES.passwordMismatch;
     setFieldErrors(errors);
@@ -56,7 +56,10 @@ export function NewPasswordForm() {
     try {
       const result = await updatePasswordAction({ password });
       if (!result.ok) {
-        if (result.error === "invalid_input")
+        if (
+          result.error === "invalid_input" ||
+          result.error === "weak_password"
+        )
           setFieldErrors({ password: FIELD_MESSAGES.password });
         else setFormError(result.error);
         return;
@@ -93,6 +96,8 @@ export function NewPasswordForm() {
           placeholder="••••••••"
           autoComplete="new-password"
           disabled={disabled}
+          hintId="new-pass-reqs"
+          hint={<PasswordRequirements id="new-pass-reqs" password={password} />}
         />
         <AuthField
           id="new-pass-repeat"

@@ -5,10 +5,10 @@ export const AUTH_ERROR_MESSAGES: Record<AuthError, string> = {
   invalid_input: "▸ REVISA LOS DATOS DEL FORMULARIO_",
   invalid_credentials: "▸ CORREO O CONTRASEÑA INCORRECTOS_",
   email_not_confirmed: "▸ CONFIRMA TU CORREO ANTES DE ENTRAR_",
-  weak_password: "▸ LA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES_",
+  weak_password: "▸ LA CONTRASEÑA NO CUMPLE LOS REQUISITOS_",
   same_password: "▸ LA NUEVA CONTRASEÑA DEBE SER DISTINTA_",
   no_session: "▸ ENLACE CADUCADO O NO VÁLIDO_",
-  rate_limited: "▸ DEMASIADOS INTENTOS — ESPERA UN MINUTO_",
+  rate_limited: "▸ DEMASIADOS INTENTOS — ESPERA UNOS MINUTOS_",
   oauth_failed: "▸ NO SE PUDO ENTRAR CON GOOGLE O GITHUB — REINTENTA_",
   unknown: "▸ SEÑAL PERDIDA — REINTENTA_",
 };
@@ -16,7 +16,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthError, string> = {
 export const FIELD_MESSAGES = {
   alias: "▸ ALIAS: DE 1 A 10 LETRAS, NÚMEROS O _",
   email: "▸ CORREO NO VÁLIDO_",
-  password: "▸ LA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES_",
+  password: "▸ LA CONTRASEÑA NO CUMPLE LOS REQUISITOS_",
   passwordEmpty: "▸ ESCRIBE TU CONTRASEÑA_",
   passwordMismatch: "▸ LAS CONTRASEÑAS NO COINCIDEN_",
 } as const;
@@ -64,7 +64,11 @@ export function AuthNotice({
     </div>
   );
 }
-/** Campo de formulario con su error debajo, enlazado por `aria-describedby`. */
+/**
+ * Campo de formulario con su error debajo, enlazado por `aria-describedby`.
+ * `hint` (con su `hintId`) va entre el input y el error, p. ej. la lista de
+ * requisitos de la contraseña (SPEC 16).
+ */
 export function AuthField({
   id,
   label,
@@ -76,6 +80,8 @@ export function AuthField({
   autoComplete,
   disabled,
   className,
+  hint,
+  hintId,
 }: {
   id: string;
   label: string;
@@ -87,8 +93,12 @@ export function AuthField({
   autoComplete?: string;
   disabled?: boolean;
   className?: string;
+  hint?: ReactNode;
+  hintId?: string;
 }) {
   const errorId = `${id}-error`;
+  const describedBy =
+    [hint && hintId, error && errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div className={className ? `field ${className}` : "field"}>
       <label htmlFor={id}>{label}</label>
@@ -101,8 +111,9 @@ export function AuthField({
         autoComplete={autoComplete}
         disabled={disabled}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy}
       />
+      {hint}
       {error && (
         <span id={errorId} className="field-error">
           {error}

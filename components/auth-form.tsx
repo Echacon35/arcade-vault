@@ -15,12 +15,13 @@ import {
   AuthNotice,
   FIELD_MESSAGES,
 } from "@/components/auth-ui";
+import { PasswordRequirements } from "@/components/password-requirements";
 import { useSession } from "@/components/session-provider";
 import {
   ALIAS_RE,
   DEFAULT_NEXT,
   EMAIL_RE,
-  MIN_PASSWORD,
+  isStrongPassword,
   type OAuthProvider,
   safeNext,
 } from "@/lib/auth-rules";
@@ -151,7 +152,7 @@ export function AuthFormView({
     if (tab === "up" && !ALIAS_RE.test(alias))
       errors.alias = FIELD_MESSAGES.alias;
     if (!EMAIL_RE.test(email.trim())) errors.email = FIELD_MESSAGES.email;
-    if (tab === "up" && password.length < MIN_PASSWORD)
+    if (tab === "up" && !isStrongPassword(password))
       errors.password = FIELD_MESSAGES.password;
     if (tab === "in" && password.length === 0)
       errors.password = FIELD_MESSAGES.passwordEmpty;
@@ -174,6 +175,9 @@ export function AuthFormView({
           password,
         });
         if (result.ok) setSentTo(email.trim());
+        // weak_password (de la Server Action o de Supabase) va junto al campo, como el error del cliente.
+        else if (result.error === "weak_password")
+          setFieldErrors({ password: FIELD_MESSAGES.password });
         else setFormError(result.error);
         return;
       }
@@ -272,6 +276,12 @@ export function AuthFormView({
           placeholder="••••••••"
           autoComplete={tab === "up" ? "new-password" : "current-password"}
           disabled={busy}
+          hintId="auth-pass-reqs"
+          hint={
+            tab === "up" ? (
+              <PasswordRequirements id="auth-pass-reqs" password={password} />
+            ) : undefined
+          }
         />
         {tab === "in" && (
           <div className="mb-3 flex justify-end">

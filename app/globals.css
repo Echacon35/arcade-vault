@@ -335,7 +335,79 @@
     border: 1px solid var(--line);
     box-shadow: 0 0 24px rgba(0, 245, 255, 0.18);
   }
-  /* Icono de cuenta: oculto en escritorio, visible a ≤ 960 px (SPEC 13). */
+  /* SPEC 15: foto de la cuenta en un círculo, con iniciales del alias como respaldo. */
+  .user-avatar {
+    --avatar-size: 28px;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    overflow: hidden;
+    border: 1px solid var(--cyan);
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle at 32% 28%,
+        rgba(0, 245, 255, 0.3),
+        rgba(0, 245, 255, 0.07) 68%
+      ),
+      var(--bg);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.45);
+  }
+  .user-avatar[data-size="40"] {
+    --avatar-size: 40px;
+  }
+  .user-avatar[data-size="48"] {
+    --avatar-size: 48px;
+  }
+  .user-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .user-avatar-initials {
+    font-family: var(--pixel);
+    font-size: calc(var(--avatar-size) * 0.32);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: var(--cyan);
+    text-shadow: 0 0 6px rgba(0, 245, 255, 0.6);
+    /* La fuente pixel queda un poco alta: se compensa para centrarla en el círculo. */
+    transform: translate(0.04em, 0.06em);
+  }
+  /* SPEC 15: botón de cuenta en escritorio con la foto a la izquierda del alias. */
+  .av-nav .auth-btn .auth-btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  @media (min-width: 1101px) {
+    /* Menos relleno vertical para que el círculo de 28 px no agrande el botón. */
+    .av-nav .auth-btn.has-session {
+      padding: 6px 16px 6px 6px;
+    }
+  }
+  /* Foto compacta del botón de cuenta: oculta en escritorio, visible a ≤ 1100 px (SPEC 15). */
+  .av-nav .auth-btn .auth-btn-compact {
+    display: none;
+  }
+  /* Cabecera del menú de cuenta: foto de 48 px junto al alias y el correo. */
+  .account-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .account-head-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  /* Icono de cuenta: oculto en escritorio, visible a ≤ 1100 px (SPEC 13, corte subido en SPEC 15). */
   .av-nav .auth-btn .account-glyph {
     display: none;
   }
@@ -362,7 +434,7 @@
     padding: 14px 12px;
     border-bottom: 1px dashed var(--line-2);
   }
-  @media (max-width: 960px) {
+  @media (max-width: 1100px) {
     .av-nav {
       padding: 12px 16px;
     }
@@ -388,10 +460,15 @@
       color: var(--ink-faint);
       border-color: var(--line);
     }
+    /* SPEC 15: con sesión el botón es la foto de 40 px; el borde y el brillo los pone el círculo. */
     .av-nav .auth-btn.has-session {
       color: var(--cyan);
-      border-color: var(--cyan);
-      filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.55));
+      border-color: transparent;
+      background: transparent;
+      clip-path: none;
+    }
+    .av-nav .auth-btn .auth-btn-compact {
+      display: inline-flex;
     }
     .av-nav .auth-btn .auth-btn-text {
       display: none;
@@ -2491,6 +2568,50 @@
     font-size: 10px;
     letter-spacing: 0.08em;
     color: var(--magenta);
+  }
+  /* SPEC 16: requisitos de la contraseña en vivo; un piloto por requisito. */
+  /* Columnas iguales: 3 + 2 en la tarjeta de escritorio y 2 + 2 + 1 a 360 px, siempre alineadas. */
+  .pw-reqs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 6px 10px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pw-req {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    transition: color 140ms;
+  }
+  .pw-req .led {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--ink-faint);
+    transition:
+      background-color 140ms,
+      border-color 140ms,
+      box-shadow 140ms;
+  }
+  .pw-req.on {
+    color: var(--cyan);
+  }
+  .pw-req.on .led {
+    border-color: var(--cyan);
+    background: var(--cyan);
+    box-shadow: 0 0 6px rgba(0, 245, 255, 0.8);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pw-req,
+    .pw-req .led {
+      transition: none;
+    }
   }
   /* A diferencia de .toast-saved, el texto salta de línea: los mensajes no caben en 440 px. */
   .auth-notice {
