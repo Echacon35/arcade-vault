@@ -1,6 +1,6 @@
 # SPEC 12 — Registro, login y autenticación con correo y contraseña
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** SPEC 01, SPEC 02, SPEC 04
 > **Fecha:** 2026-11-12
 > **Objetivo:** Sustituir la sesión simulada de `/acceso` por cuentas reales de Supabase Auth con correo y contraseña, confirmación por correo, recuperación de contraseña y cierre de sesión.
